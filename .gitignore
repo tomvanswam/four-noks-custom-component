@@ -32,6 +32,7 @@ ENV/
 
 # Home Assistant local test config
 config/
+test_config/
 
 # Ruff
 .ruff_cache/

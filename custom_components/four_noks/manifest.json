@@ -1,12 +1,12 @@
 {
   "domain": "four_noks",
   "name": "4-noks",
-  "codeowners": ["@Tom-Bom-badil"],
+  "codeowners": ["@tomvanswam"],
   "config_flow": true,
   "dependencies": ["modbus_connection"],
-  "documentation": "https://github.com/Tom-Bom-badil/four-noks-custom-component",
+  "documentation": "https://github.com/tomvanswam/four-noks-custom-component",
   "integration_type": "device",
   "iot_class": "local_polling",
-  "issue_tracker": "https://github.com/Tom-Bom-badil/four-noks-custom-component/issues",
+  "issue_tracker": "https://github.com/tomvanswam/four-noks-custom-component/issues",
   "version": "0.1.0"
 }

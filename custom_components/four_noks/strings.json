@@ -2,19 +2,43 @@
   "config": {
     "step": {
       "user": {
-        "description": "Select the Modbus connection the 4-noks device is reached through and its unit address.",
+        "title": "4-noks Setup",
+        "description": "Configure the connection to your 4-noks Gateway or Modbus proxy.",
         "data": {
+          "host": "Host / IP address",
+          "port": "Port",
           "connection_entry_id": "Modbus connection",
-          "unit_id": "Modbus unit"
+          "unit_id": "Unit address",
+          "auto_discover": "Discover connected devices via Gateway"
         },
         "data_description": {
-          "connection_entry_id": "The Modbus connection this device is reached through.",
-          "unit_id": "The device's Modbus station address (1 for Gateway, 16–126 for Smart Plugs)."
+          "host": "IP address or hostname of the 4-noks Gateway or modbus-proxy (e.g. 192.168.2.3).",
+          "port": "Modbus TCP port (default 502).",
+          "unit_id": "Station address: 1 for Gateway, 16–126 for Smart Plugs.",
+          "auto_discover": "When configuring Unit 1 (Gateway), automatically detect all active nodes in the Zigbee network."
+        }
+      },
+      "new_connection": {
+        "title": "New Modbus Connection",
+        "description": "Enter the connection details for the Modbus TCP endpoint.",
+        "data": {
+          "host": "Host / IP address",
+          "port": "Port"
+        }
+      },
+      "discover_nodes": {
+        "title": "Discovered 4-noks Devices",
+        "description": "The 4-noks Gateway reported the following active devices. Select the devices to add to Home Assistant:",
+        "data": {
+          "selected_nodes": "Devices to add"
         }
       }
     },
     "error": {
-      "cannot_connect": "Failed to connect. Check that the device is reachable on the selected connection and unit address."
+      "cannot_connect": "Failed to connect. Check that the device is reachable on the host, port, and unit address."
+    },
+    "abort": {
+      "already_configured": "This 4-noks device is already configured."
     }
   },
   "entity": {

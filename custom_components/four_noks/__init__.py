@@ -10,7 +10,10 @@ try:
 except ImportError:
     from .vendor.four_noks_modbus import async_probe_device
 
-from homeassistant.components.modbus_connection import async_get_unit
+try:
+    from homeassistant.components.modbus_connection import async_get_unit
+except ImportError:
+    from custom_components.modbus_connection import async_get_unit
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 

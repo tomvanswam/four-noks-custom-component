@@ -1,5 +1,5 @@
 target-version = "py312"
-extend-exclude = ["custom_components/four_noks/vendor"]
+extend-exclude = ["custom_components/four_noks/vendor", "test_config"]
 
 [lint]
 select = [
