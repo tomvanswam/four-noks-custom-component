@@ -42,12 +42,27 @@ class PlugMeasurements(FourNoksComponent):
     gw_messages_received = integer(
         11, signed=False, description="Messages Received from Device"
     )
+    gw_message_receiving_instant_time = integer(
+        12,
+        signed=False,
+        description="Gateway Message Receiving Instant Time (Packed HH:MM)",
+    )
     gw_last_message_signal_lvl = gauge(
         13, 1.0, offset=-100, unit="dB", description="Gateway Received Signal Level"
     )
     gw_device_network_address = integer(
         14, signed=False, description="Device Network Address"
     )
+
+    @property
+    def gw_message_receiving_instant_time_formatted(self) -> str | None:
+        """Formatted reception time as HH:MM."""
+        if self.gw_message_receiving_instant_time is None:
+            return None
+        from ..utils import unpack_packed_time
+
+        hour, minute = unpack_packed_time(self.gw_message_receiving_instant_time)
+        return f"{hour:02d}:{minute:02d}"
 
     @property
     def energy_consumed_wh(self) -> float | None:

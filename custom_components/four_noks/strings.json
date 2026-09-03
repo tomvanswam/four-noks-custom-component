@@ -45,6 +45,9 @@
     "switch": {
       "plug_relay": {
         "name": "Relay"
+      },
+      "standby_killer_enable": {
+        "name": "Standby killer"
       }
     },
     "sensor": {
@@ -63,6 +66,24 @@
       "messages_sent": {
         "name": "Messages sent"
       },
+      "calibration_parameter": {
+        "name": "Calibration parameter"
+      },
+      "gw_sec_last_message": {
+        "name": "Last message delay"
+      },
+      "gw_messages_received": {
+        "name": "Gateway messages received"
+      },
+      "gw_message_receiving_instant_time": {
+        "name": "Gateway reception time"
+      },
+      "gw_last_message_signal_lvl": {
+        "name": "Gateway received signal level"
+      },
+      "gw_device_network_address": {
+        "name": "Device network address"
+      },
       "transmission_power": {
         "name": "Transmission power"
       },
@@ -80,6 +101,36 @@
       },
       "routers_total": {
         "name": "Total routers"
+      },
+      "network_channel": {
+        "name": "Network channel"
+      },
+      "network_panid": {
+        "name": "Network PAN ID"
+      },
+      "gateway_address": {
+        "name": "Gateway address"
+      },
+      "bridge_devices_count": {
+        "name": "Bridge end devices"
+      },
+      "end_devices_count": {
+        "name": "Local end devices"
+      },
+      "resets_count": {
+        "name": "Resets count"
+      },
+      "reset_type": {
+        "name": "Reset cause"
+      },
+      "free_packet_buffer": {
+        "name": "Free packet buffer"
+      },
+      "routers_neighbours": {
+        "name": "Router neighbours"
+      },
+      "routers_good": {
+        "name": "Good router neighbours"
       }
     },
     "binary_sensor": {
@@ -89,11 +140,42 @@
       "standby_killer_status": {
         "name": "Standby killer status"
       },
+      "general_pending": {
+        "name": "General pending commands"
+      },
+      "gateway_presence": {
+        "name": "Gateway node presence"
+      },
+      "gateway_data_valid": {
+        "name": "Gateway data valid"
+      },
       "connection_state": {
         "name": "Network connected"
       },
       "network_open_state": {
         "name": "Discovery open"
+      }
+    },
+    "number": {
+      "transmission_time": {
+        "name": "Transmission period"
+      },
+      "standby_killer_time_window": {
+        "name": "Standby killer time window"
+      },
+      "standby_killer_power_threshold": {
+        "name": "Standby killer power threshold"
+      },
+      "route_regeneration_period": {
+        "name": "Route regeneration period"
+      }
+    },
+    "button": {
+      "data_reset": {
+        "name": "Reset measurement data"
+      },
+      "data_save": {
+        "name": "Save data to flash"
       }
     }
   }

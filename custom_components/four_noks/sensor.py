@@ -87,6 +87,62 @@ PLUG_SENSORS: tuple[FourNoksSensorDescription, ...] = (
             getattr(d, "measurements", None), "messages_sent", None
         ),
     ),
+    FourNoksSensorDescription(
+        key="calibration_parameter",
+        translation_key="calibration_parameter",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda d: getattr(
+            getattr(d, "measurements", None), "calibration_parameter", None
+        ),
+    ),
+    FourNoksSensorDescription(
+        key="gw_sec_last_message",
+        translation_key="gw_sec_last_message",
+        device_class=SensorDeviceClass.DURATION,
+        native_unit_of_measurement=UnitOfTime.SECONDS,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda d: getattr(
+            getattr(d, "measurements", None), "gw_sec_last_message", None
+        ),
+    ),
+    FourNoksSensorDescription(
+        key="gw_messages_received",
+        translation_key="gw_messages_received",
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda d: getattr(
+            getattr(d, "measurements", None), "gw_messages_received", None
+        ),
+    ),
+    FourNoksSensorDescription(
+        key="gw_message_receiving_instant_time",
+        translation_key="gw_message_receiving_instant_time",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda d: getattr(
+            getattr(d, "measurements", None),
+            "gw_message_receiving_instant_time_formatted",
+            None,
+        ),
+    ),
+    FourNoksSensorDescription(
+        key="gw_last_message_signal_lvl",
+        translation_key="gw_last_message_signal_lvl",
+        device_class=SensorDeviceClass.SIGNAL_STRENGTH,
+        native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS,
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda d: getattr(
+            getattr(d, "measurements", None), "gw_last_message_signal_lvl", None
+        ),
+    ),
+    FourNoksSensorDescription(
+        key="gw_device_network_address",
+        translation_key="gw_device_network_address",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda d: getattr(
+            getattr(d, "measurements", None), "gw_device_network_address", None
+        ),
+    ),
 )
 
 GATEWAY_SENSORS: tuple[FourNoksSensorDescription, ...] = (
@@ -141,6 +197,80 @@ GATEWAY_SENSORS: tuple[FourNoksSensorDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda d: getattr(getattr(d, "radio", None), "routers_total", None),
+    ),
+    FourNoksSensorDescription(
+        key="network_channel",
+        translation_key="network_channel",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda d: getattr(getattr(d, "radio", None), "network_channel", None),
+    ),
+    FourNoksSensorDescription(
+        key="network_panid",
+        translation_key="network_panid",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda d: getattr(getattr(d, "radio", None), "network_panid", None),
+    ),
+    FourNoksSensorDescription(
+        key="gateway_address",
+        translation_key="gateway_address",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda d: getattr(getattr(d, "radio", None), "gateway_address", None),
+    ),
+    FourNoksSensorDescription(
+        key="bridge_devices_count",
+        translation_key="bridge_devices_count",
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda d: getattr(
+            getattr(d, "radio", None), "bridge_devices_count", None
+        ),
+    ),
+    FourNoksSensorDescription(
+        key="end_devices_count",
+        translation_key="end_devices_count",
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda d: getattr(
+            getattr(d, "radio", None), "end_devices_count", None
+        ),
+    ),
+    FourNoksSensorDescription(
+        key="resets_count",
+        translation_key="resets_count",
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda d: getattr(getattr(d, "radio", None), "resets_count", None),
+    ),
+    FourNoksSensorDescription(
+        key="reset_type",
+        translation_key="reset_type",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda d: getattr(getattr(d, "radio", None), "reset_type", None),
+    ),
+    FourNoksSensorDescription(
+        key="free_packet_buffer",
+        translation_key="free_packet_buffer",
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda d: getattr(
+            getattr(d, "radio", None), "free_packet_buffer", None
+        ),
+    ),
+    FourNoksSensorDescription(
+        key="routers_neighbours",
+        translation_key="routers_neighbours",
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda d: getattr(
+            getattr(d, "radio", None), "routers_neighbours", None
+        ),
+    ),
+    FourNoksSensorDescription(
+        key="routers_good",
+        translation_key="routers_good",
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda d: getattr(getattr(d, "radio", None), "routers_good", None),
     ),
 )
 

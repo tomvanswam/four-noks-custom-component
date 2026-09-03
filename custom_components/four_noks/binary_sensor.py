@@ -4,9 +4,9 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 try:
-    from four_noks_modbus import FourNoksDevice, FourNoksGateway, FourNoksPlug
+    from four_noks_modbus import FourNoksGateway, FourNoksPlug
 except ImportError:
-    from .vendor.four_noks_modbus import FourNoksDevice, FourNoksGateway, FourNoksPlug
+    from .vendor.four_noks_modbus import FourNoksGateway, FourNoksPlug
 
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
@@ -25,7 +25,7 @@ from .entity import FourNoksEntity
 class FourNoksBinarySensorDescription(BinarySensorEntityDescription):
     """Describes a 4-noks binary sensor entity."""
 
-    is_on_fn: Callable[[FourNoksDevice], bool | None]
+    is_on_fn: Callable[[FourNoksCoordinator], bool | None]
 
 
 PLUG_BINARY_SENSORS: tuple[FourNoksBinarySensorDescription, ...] = (
@@ -34,15 +34,37 @@ PLUG_BINARY_SENSORS: tuple[FourNoksBinarySensorDescription, ...] = (
         translation_key="presence",
         device_class=BinarySensorDeviceClass.CONNECTIVITY,
         entity_category=EntityCategory.DIAGNOSTIC,
-        is_on_fn=lambda d: getattr(getattr(d, "switch", None), "presence", None),
+        is_on_fn=lambda c: getattr(getattr(c.device, "switch", None), "presence", None),
     ),
     FourNoksBinarySensorDescription(
         key="standby_killer_status",
         translation_key="standby_killer_status",
         entity_category=EntityCategory.DIAGNOSTIC,
-        is_on_fn=lambda d: getattr(
-            getattr(d, "switch", None), "standby_killer_status", None
+        is_on_fn=lambda c: getattr(
+            getattr(c.device, "switch", None), "standby_killer_status", None
         ),
+    ),
+    FourNoksBinarySensorDescription(
+        key="general_pending",
+        translation_key="general_pending",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        is_on_fn=lambda c: getattr(
+            getattr(c.device, "switch", None), "general_pending", None
+        ),
+    ),
+    FourNoksBinarySensorDescription(
+        key="gateway_presence",
+        translation_key="gateway_presence",
+        device_class=BinarySensorDeviceClass.CONNECTIVITY,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        is_on_fn=lambda c: c.gateway_node_presence,
+    ),
+    FourNoksBinarySensorDescription(
+        key="gateway_data_valid",
+        translation_key="gateway_data_valid",
+        device_class=BinarySensorDeviceClass.CONNECTIVITY,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        is_on_fn=lambda c: c.gateway_node_data_valid,
     ),
 )
 
@@ -51,8 +73,8 @@ GATEWAY_BINARY_SENSORS: tuple[FourNoksBinarySensorDescription, ...] = (
         key="connection_state",
         translation_key="connection_state",
         device_class=BinarySensorDeviceClass.CONNECTIVITY,
-        is_on_fn=lambda d: getattr(
-            getattr(d, "network", None), "connection_state", None
+        is_on_fn=lambda c: getattr(
+            getattr(c.device, "network", None), "connection_state", None
         ),
     ),
     FourNoksBinarySensorDescription(
@@ -60,8 +82,8 @@ GATEWAY_BINARY_SENSORS: tuple[FourNoksBinarySensorDescription, ...] = (
         translation_key="network_open_state",
         device_class=BinarySensorDeviceClass.RUNNING,
         entity_category=EntityCategory.DIAGNOSTIC,
-        is_on_fn=lambda d: getattr(
-            getattr(d, "network", None), "network_open_state", None
+        is_on_fn=lambda c: getattr(
+            getattr(c.device, "network", None), "network_open_state", None
         ),
     ),
 )
@@ -101,4 +123,4 @@ class FourNoksBinarySensor(FourNoksEntity, BinarySensorEntity):
     @property
     def is_on(self) -> bool | None:
         """Return true if the binary sensor is on."""
-        return self.entity_description.is_on_fn(self.coordinator.device)
+        return self.entity_description.is_on_fn(self.coordinator)
