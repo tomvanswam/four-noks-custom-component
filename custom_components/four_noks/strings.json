@@ -1,0 +1,76 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "description": "Select the Modbus connection the 4-noks device is reached through and its unit address.",
+        "data": {
+          "connection_entry_id": "Modbus connection",
+          "unit_id": "Modbus unit"
+        },
+        "data_description": {
+          "connection_entry_id": "The Modbus connection this device is reached through.",
+          "unit_id": "The device's Modbus station address (1 for Gateway, 16–126 for Smart Plugs)."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect. Check that the device is reachable on the selected connection and unit address."
+    }
+  },
+  "entity": {
+    "switch": {
+      "plug_relay": {
+        "name": "Relay"
+      }
+    },
+    "sensor": {
+      "active_power": {
+        "name": "Active power"
+      },
+      "energy_consumed": {
+        "name": "Energy consumed"
+      },
+      "signal_level_radio": {
+        "name": "Radio signal level"
+      },
+      "measure_time": {
+        "name": "Measurement time"
+      },
+      "messages_sent": {
+        "name": "Messages sent"
+      },
+      "transmission_power": {
+        "name": "Transmission power"
+      },
+      "signal_level": {
+        "name": "Signal level"
+      },
+      "runtime": {
+        "name": "Runtime"
+      },
+      "messages_received": {
+        "name": "Messages received"
+      },
+      "node_count": {
+        "name": "Connected nodes"
+      },
+      "routers_total": {
+        "name": "Total routers"
+      }
+    },
+    "binary_sensor": {
+      "presence": {
+        "name": "Presence"
+      },
+      "standby_killer_status": {
+        "name": "Standby killer status"
+      },
+      "connection_state": {
+        "name": "Network connected"
+      },
+      "network_open_state": {
+        "name": "Discovery open"
+      }
+    }
+  }
+}

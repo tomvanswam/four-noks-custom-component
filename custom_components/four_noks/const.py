@@ -1,0 +1,13 @@
+"""Constants for the 4-noks integration."""
+
+from datetime import timedelta
+from typing import Final
+
+DOMAIN: Final = "four_noks"
+
+CONF_CONNECTION: Final = "connection_entry_id"
+CONF_UNIT_ID: Final = "unit_id"
+
+DEFAULT_UNIT_ID: Final = 1
+
+SCAN_INTERVAL: Final = timedelta(seconds=30)

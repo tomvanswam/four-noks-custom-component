@@ -1,0 +1,21 @@
+{
+  "name": "4-noks Custom Component Development",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "charliermarsh.ruff",
+        "ms-python.python",
+        "ms-python.vscode-pylance"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.testing.pytestArgs": [
+          "tests"
+        ],
+        "python.testing.pytestEnabled": true
+      }
+    }
+  },
+  "postCreateCommand": "scripts/setup"
+}

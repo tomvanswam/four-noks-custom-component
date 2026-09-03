@@ -1,0 +1,4 @@
+--requirement requirements_common.txt
+--requirement requirements_lint.txt
+pytest>=8.0.0
+pytest-asyncio>=0.24.0
