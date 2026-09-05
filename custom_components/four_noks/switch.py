@@ -33,7 +33,7 @@ async def async_setup_entry(
 class FourNoksPlugSwitch(FourNoksEntity, SwitchEntity):
     """Switch entity controlling a 4-noks smart plug relay."""
 
-    _attr_translation_key = "plug_relay"
+    _attr_translation_key = "switch"
 
     def __init__(self, coordinator: FourNoksCoordinator) -> None:
         """Initialize the switch."""
