@@ -32,6 +32,13 @@ ignore = [
     "RUF012",
 ]
 
+[lint.per-file-ignores]
+"tests/*" = [
+    "D",
+    "PT022",
+]
+
+
 [lint.isort]
 combine-as-imports = true
 force-sort-within-sections = true

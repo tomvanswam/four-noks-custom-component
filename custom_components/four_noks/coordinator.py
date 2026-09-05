@@ -9,6 +9,7 @@ except ImportError:
     from .vendor.four_noks_modbus import FourNoksDevice
 
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import CONF_SCAN_INTERVAL
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from modbus_connection import ModbusError
@@ -20,7 +21,6 @@ except ImportError:
 
 from .const import (
     CONF_CONNECTION,
-    CONF_SCAN_INTERVAL,
     CONF_UNIT_ID,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,

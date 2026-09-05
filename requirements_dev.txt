@@ -2,3 +2,6 @@
 --requirement requirements_lint.txt
 pytest>=8.0.0
 pytest-asyncio>=0.24.0
+pytest-homeassistant-custom-component>=0.13.0
+modbus-connection>=4.10.0
+
