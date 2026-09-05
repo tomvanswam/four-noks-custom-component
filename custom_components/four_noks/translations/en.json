@@ -45,9 +45,6 @@
     "switch": {
       "plug_relay": {
         "name": "Relay"
-      },
-      "standby_killer_enable": {
-        "name": "Standby killer"
       }
     },
     "sensor": {
@@ -171,6 +168,9 @@
       }
     },
     "button": {
+      "standby_killer_enable": {
+        "name": "Enable standby killer"
+      },
       "data_reset": {
         "name": "Reset measurement data"
       },

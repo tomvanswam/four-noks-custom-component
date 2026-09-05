@@ -2,11 +2,12 @@
 
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
+from typing import Any
 
 try:
-    from four_noks_modbus import FourNoksDevice, FourNoksPlug
+    from four_noks_modbus import FourNoksPlug
 except ImportError:
-    from .vendor.four_noks_modbus import FourNoksDevice, FourNoksPlug
+    from .vendor.four_noks_modbus import FourNoksPlug
 
 from homeassistant.components.button import ButtonEntity, ButtonEntityDescription
 from homeassistant.core import HomeAssistant
@@ -21,21 +22,26 @@ from .entity import FourNoksEntity
 class FourNoksButtonDescription(ButtonEntityDescription):
     """Describes a 4-noks button entity."""
 
-    press_fn: Callable[[FourNoksDevice], Awaitable[None]]
+    press_fn: Callable[[Any], Awaitable[None]]
 
 
 PLUG_BUTTONS: tuple[FourNoksButtonDescription, ...] = (
     FourNoksButtonDescription(
+        key="standby_killer_enable",
+        translation_key="standby_killer_enable",
+        press_fn=lambda d: d.switch.async_enable_standby_killer(),
+    ),
+    FourNoksButtonDescription(
         key="data_reset",
         translation_key="data_reset",
         entity_category=EntityCategory.CONFIG,
-        press_fn=lambda d: d.async_reset_data(),
+        press_fn=lambda d: d.switch.async_reset_data(),
     ),
     FourNoksButtonDescription(
         key="data_save",
         translation_key="data_save",
         entity_category=EntityCategory.CONFIG,
-        press_fn=lambda d: d.async_save_data(),
+        press_fn=lambda d: d.switch.async_save_data(),
     ),
 )
 

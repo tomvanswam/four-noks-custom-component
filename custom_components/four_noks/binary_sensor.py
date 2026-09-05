@@ -39,7 +39,6 @@ PLUG_BINARY_SENSORS: tuple[FourNoksBinarySensorDescription, ...] = (
     FourNoksBinarySensorDescription(
         key="standby_killer_status",
         translation_key="standby_killer_status",
-        entity_category=EntityCategory.DIAGNOSTIC,
         is_on_fn=lambda c: getattr(
             getattr(c.device, "switch", None), "standby_killer_status", None
         ),
