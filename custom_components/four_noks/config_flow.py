@@ -3,9 +3,13 @@
 from typing import Any
 
 try:
-    from four_noks_modbus import FourNoksGateway, async_probe_device
+    from four_noks_modbus import DeviceType, FourNoksGateway, async_probe_device
 except ImportError:
-    from .vendor.four_noks_modbus import FourNoksGateway, async_probe_device
+    from .vendor.four_noks_modbus import (
+        DeviceType,
+        FourNoksGateway,
+        async_probe_device,
+    )
 
 from modbus_connection import ModbusError
 import voluptuous as vol
@@ -196,16 +200,32 @@ class FourNoksConfigFlow(ConfigFlow, domain=DOMAIN):
         if not isinstance(device, FourNoksGateway):
             return await self._async_create_device_entry(self._connection_id, unit_id)
 
-        # Gateway detected! Read active nodes table (Discrete Inputs 16..127)
+        # Gateway detected! Read active nodes table:
+        # Presence: Discrete Inputs 16..127 (112 bits)
+        # Data validity: Discrete Inputs 128..239 (112 bits)
         self._discovered_nodes = {unit_id: f"{device.info.model} (Unit {unit_id})"}
         try:
-            node_bits = await unit.read_discrete_inputs(16, 112)
-            for idx, active in enumerate(node_bits):
-                if active:
+            presence_bits = await unit.read_discrete_inputs(16, 112)
+            validity_bits = await unit.read_discrete_inputs(128, 112)
+
+            for idx in range(min(len(presence_bits), len(validity_bits))):
+                if presence_bits[idx] and validity_bits[idx]:
                     node_unit = 16 + idx
-                    self._discovered_nodes[node_unit] = (
-                        f"4-noks Smart Plug (Unit {node_unit})"
-                    )
+                    try:
+                        node_unit_obj = async_get_unit(
+                            self.hass, self._connection_id, node_unit
+                        )
+                        node_dev = await async_probe_device(node_unit_obj)
+                        if node_dev.info.device_type_code == DeviceType.PLUG:
+                            self._discovered_nodes[node_unit] = (
+                                f"4-noks Smart Plug (Unit {node_unit})"
+                            )
+                        elif node_dev.info.device_type_code == DeviceType.GATEWAY:
+                            self._discovered_nodes[node_unit] = (
+                                f"4-noks Gateway (Unit {node_unit})"
+                            )
+                    except (ConnectionNotReady, ModbusError, OSError, ValueError):
+                        continue
         except (ModbusError, OSError):
             pass
 
@@ -291,6 +311,11 @@ class FourNoksConfigFlow(ConfigFlow, domain=DOMAIN):
                 self.hass, data[CONF_CONNECTION], int(data[CONF_UNIT_ID])
             )
             device = await async_probe_device(unit)
+            if device.info.device_type_code not in (
+                DeviceType.GATEWAY,
+                DeviceType.PLUG,
+            ):
+                return None
         except (ConnectionNotReady, ModbusError, OSError, ValueError):
             return None
         return f"{device.info.model} ({int(data[CONF_UNIT_ID])})"

@@ -83,8 +83,10 @@ async def async_probe_device(unit: ModbusUnit) -> FourNoksDevice:
     elif device_type == DeviceType.PLUG:
         device = FourNoksPlug(unit)
     else:
-        # Default / fallback: treat as Smart Plug if unknown or unconfigured
-        device = FourNoksPlug(unit)
+        raise ValueError(
+            f"Unsupported 4-noks device type: {device_type} "
+            f"(expected {DeviceType.GATEWAY} or {DeviceType.PLUG})"
+        )
 
     device.info = info
     return device
