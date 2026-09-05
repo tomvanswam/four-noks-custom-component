@@ -149,9 +149,6 @@ def mock_modbus_connection() -> MockModbusConnection:
 def mock_modbus_open(mock_modbus_connection: MockModbusConnection):
     """Mock Home Assistant's native modbus connection getters."""
 
-    async def _async_release():
-        pass
-
     @asynccontextmanager
     async def _mock_get_temporary_unit(hass, params, unit_id):
         yield mock_modbus_connection.for_unit(unit_id)
@@ -160,10 +157,6 @@ def mock_modbus_open(mock_modbus_connection: MockModbusConnection):
         return mock_modbus_connection.for_unit(unit_id)
 
     with (
-        patch(
-            "homeassistant.components.modbus.connection._async_acquire",
-            return_value=(mock_modbus_connection, _async_release),
-        ),
         patch(
             "custom_components.four_noks.async_get_unit",
             side_effect=_mock_get_unit,
