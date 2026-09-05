@@ -71,6 +71,17 @@ class FourNoksGateway(FourNoksDevice):
             self.settings.async_update(),
         )
 
+    async def async_open_discovery(self) -> None:
+        """Open network for discovery (HR 0 = 5266, then Coil 0 = True)."""
+        await self.unit.write_register(0, 5266)
+        await self.unit.write_coil(0, True)
+
+    async def async_close_discovery(self) -> None:
+        """Close network for discovery (HR 0 = 5267, then Coil 0 = True)."""
+        await self.unit.write_register(0, 5267)
+        await self.unit.write_coil(0, True)
+
+
 
 async def async_probe_device(unit: ModbusUnit) -> FourNoksDevice:
     """Probe a Modbus unit to detect model and return device instance."""

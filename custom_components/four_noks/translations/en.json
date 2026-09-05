@@ -59,6 +59,9 @@
     "switch": {
       "switch": {
         "name": "Switch"
+      },
+      "discovery": {
+        "name": "Discovery"
       }
     },
     "sensor": {
@@ -168,9 +171,6 @@
       },
       "connection_state": {
         "name": "Network connected"
-      },
-      "network_open_state": {
-        "name": "Discovery open"
       },
       "device_node_presence": {
         "name": "Device {node_id} presence"

@@ -78,15 +78,6 @@ GATEWAY_BINARY_SENSORS: tuple[FourNoksBinarySensorDescription, ...] = (
             getattr(c.device, "network", None), "connection_state", None
         ),
     ),
-    FourNoksBinarySensorDescription(
-        key="network_open_state",
-        translation_key="network_open_state",
-        device_class=BinarySensorDeviceClass.RUNNING,
-        entity_category=EntityCategory.DIAGNOSTIC,
-        is_on_fn=lambda c: getattr(
-            getattr(c.device, "network", None), "network_open_state", None
-        ),
-    ),
 )
 
 
