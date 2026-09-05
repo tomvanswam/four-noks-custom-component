@@ -2,29 +2,7 @@
 
 from typing import Any
 
-try:
-    from four_noks_modbus import DeviceType, FourNoksGateway, async_probe_device
-except ImportError:
-    from .vendor.four_noks_modbus import (
-        DeviceType,
-        FourNoksGateway,
-        async_probe_device,
-    )
-
-from modbus_connection import ModbusError
-import voluptuous as vol
-
-try:
-    from homeassistant.components.modbus_connection import (
-        ConnectionNotReady,
-        async_get_unit,
-    )
-except ImportError:
-    from custom_components.modbus_connection import (
-        ConnectionNotReady,
-        async_get_unit,
-    )
-
+from homeassistant.components.modbus import async_get_temporary_unit
 from homeassistant.config_entries import (
     ConfigEntry,
     ConfigFlow,
@@ -33,6 +11,7 @@ from homeassistant.config_entries import (
 )
 from homeassistant.const import CONF_HOST, CONF_PORT, CONF_SCAN_INTERVAL
 from homeassistant.core import callback
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.selector import (
     BooleanSelector,
     NumberSelector,
@@ -44,9 +23,19 @@ from homeassistant.helpers.selector import (
     SelectSelectorMode,
     TextSelector,
 )
+from modbus_connection import ModbusError, ModbusTcpParams
+import voluptuous as vol
+
+try:
+    from four_noks_modbus import DeviceType, FourNoksGateway, async_probe_device
+except ImportError:
+    from .vendor.four_noks_modbus import (
+        DeviceType,
+        FourNoksGateway,
+        async_probe_device,
+    )
 
 from .const import (
-    CONF_CONNECTION,
     CONF_UNIT_ID,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_UNIT_ID,
@@ -55,7 +44,6 @@ from .const import (
 
 CONF_AUTO_DISCOVER = "auto_discover"
 CONF_SELECTED_NODES = "selected_nodes"
-NEW_CONNECTION_VALUE = "__new__"
 
 
 class FourNoksConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -65,7 +53,8 @@ class FourNoksConfigFlow(ConfigFlow, domain=DOMAIN):
 
     def __init__(self) -> None:
         """Initialize flow state."""
-        self._connection_id: str | None = None
+        self._host: str | None = None
+        self._port: int = 502
         self._discovered_nodes: dict[int, str] = {}
 
     async def async_step_user(
@@ -73,76 +62,40 @@ class FourNoksConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Handle initial user step."""
         errors: dict[str, str] = {}
-        connections = self.hass.config_entries.async_entries("modbus_connection")
 
-        if not connections:
-            # No existing connection: ask for Host, Port, and Unit ID directly
-            if user_input is not None:
-                conn_id = await self._async_create_or_get_connection(
-                    user_input[CONF_HOST], int(user_input[CONF_PORT])
-                )
-                if not conn_id:
-                    errors["base"] = "cannot_connect"
-                else:
-                    self._connection_id = conn_id
-                    unit_id = int(user_input[CONF_UNIT_ID])
-                    if user_input.get(CONF_AUTO_DISCOVER, True) and unit_id == 1:
-                        return await self._async_handle_gateway_discovery(unit_id)
-                    return await self._async_create_device_entry(
-                        self._connection_id, unit_id
-                    )
-
-            schema = vol.Schema(
-                {
-                    vol.Required(CONF_HOST, default="192.168.2.3"): TextSelector(),
-                    vol.Required(CONF_PORT, default=502): NumberSelector(
-                        NumberSelectorConfig(
-                            min=1, max=65535, step=1, mode=NumberSelectorMode.BOX
-                        )
-                    ),
-                    vol.Required(CONF_UNIT_ID, default=DEFAULT_UNIT_ID): NumberSelector(
-                        NumberSelectorConfig(
-                            min=1, max=247, step=1, mode=NumberSelectorMode.BOX
-                        )
-                    ),
-                    vol.Required(CONF_AUTO_DISCOVER, default=True): BooleanSelector(),
-                }
-            )
-            return self.async_show_form(
-                step_id="user", data_schema=schema, errors=errors
-            )
-
-        # Existing connection(s) present: let user pick or create a new one
         if user_input is not None:
-            conn_choice = user_input[CONF_CONNECTION]
-            if conn_choice == NEW_CONNECTION_VALUE:
-                return await self.async_step_new_connection()
-
-            self._connection_id = conn_choice
+            host = str(user_input[CONF_HOST]).strip()
+            port = int(user_input[CONF_PORT])
             unit_id = int(user_input[CONF_UNIT_ID])
-            if user_input.get(CONF_AUTO_DISCOVER, True) and unit_id == 1:
-                return await self._async_handle_gateway_discovery(unit_id)
-            return await self._async_create_device_entry(self._connection_id, unit_id)
+            self._host = host
+            self._port = port
 
-        options = []
-        for entry in connections:
-            host_str = entry.data.get(CONF_HOST, "Modbus")
-            port_str = entry.data.get(CONF_PORT, "")
-            label = entry.title or f"{host_str}:{port_str}"
-            options.append(SelectOptionDict(value=entry.entry_id, label=label))
-        options.append(
-            SelectOptionDict(
-                value=NEW_CONNECTION_VALUE, label="+ New Modbus Connection..."
-            )
-        )
+            await self.async_set_unique_id(f"{host}:{port}:{unit_id}")
+            self._abort_if_unique_id_configured()
+
+            params = ModbusTcpParams(host=host, port=port)
+            try:
+                async with async_get_temporary_unit(self.hass, params, unit_id) as unit:
+                    device = await async_probe_device(unit)
+            except (HomeAssistantError, ModbusError, OSError, ValueError):
+                errors["base"] = "cannot_connect"
+            else:
+                if (
+                    user_input.get(CONF_AUTO_DISCOVER, True)
+                    and unit_id == 1
+                    and isinstance(device, FourNoksGateway)
+                ):
+                    return await self._async_handle_gateway_discovery(unit_id, device)
+                return await self._async_create_device_entry(
+                    host, port, unit_id, device.info.model
+                )
 
         schema = vol.Schema(
             {
-                vol.Required(
-                    CONF_CONNECTION, default=options[0]["value"]
-                ): SelectSelector(
-                    SelectSelectorConfig(
-                        options=options, mode=SelectSelectorMode.DROPDOWN
+                vol.Required(CONF_HOST, default="192.168.2.3"): TextSelector(),
+                vol.Required(CONF_PORT, default=502): NumberSelector(
+                    NumberSelectorConfig(
+                        min=1, max=65535, step=1, mode=NumberSelectorMode.BOX
                     )
                 ),
                 vol.Required(CONF_UNIT_ID, default=DEFAULT_UNIT_ID): NumberSelector(
@@ -155,101 +108,54 @@ class FourNoksConfigFlow(ConfigFlow, domain=DOMAIN):
         )
         return self.async_show_form(step_id="user", data_schema=schema, errors=errors)
 
-    async def async_step_new_connection(
-        self, user_input: dict[str, Any] | None = None
+    async def _async_handle_gateway_discovery(
+        self, unit_id: int, gateway_dev: FourNoksGateway
     ) -> ConfigFlowResult:
-        """Create a new Modbus connection entry."""
-        errors: dict[str, str] = {}
-        if user_input is not None:
-            conn_id = await self._async_create_or_get_connection(
-                user_input[CONF_HOST], int(user_input[CONF_PORT])
-            )
-            if not conn_id:
-                errors["base"] = "cannot_connect"
-            else:
-                self._connection_id = conn_id
-                return await self._async_handle_gateway_discovery(1)
-
-        schema = vol.Schema(
-            {
-                vol.Required(CONF_HOST, default="192.168.2.3"): TextSelector(),
-                vol.Required(CONF_PORT, default=502): NumberSelector(
-                    NumberSelectorConfig(
-                        min=1, max=65535, step=1, mode=NumberSelectorMode.BOX
-                    )
-                ),
-            }
-        )
-        return self.async_show_form(
-            step_id="new_connection", data_schema=schema, errors=errors
-        )
-
-    async def _async_create_or_get_connection(self, host: str, port: int) -> str | None:
-        """Create or find a matching modbus_connection entry."""
-        for entry in self.hass.config_entries.async_entries("modbus_connection"):
-            if entry.data.get(CONF_HOST) == host and entry.data.get(CONF_PORT) == port:
-                return entry.entry_id
-
-        # Create connection via modbus_connection config flow
-        result = await self.hass.config_entries.flow.async_init(
-            "modbus_connection",
-            context={"source": "network"},
-            data={"host": host, "port": port},
-        )
-        if result.get("type") == "create_entry":
-            return result["result"].entry_id
-        return None
-
-    async def _async_handle_gateway_discovery(self, unit_id: int) -> ConfigFlowResult:
         """Probe the gateway and discover active nodes on the Zigbee network."""
-        assert self._connection_id is not None
+        assert self._host is not None
+        params = ModbusTcpParams(host=self._host, port=self._port)
+        self._discovered_nodes = {unit_id: f"{gateway_dev.info.model} (Unit {unit_id})"}
+
         try:
-            unit = async_get_unit(self.hass, self._connection_id, unit_id)
-            device = await async_probe_device(unit)
-        except (ConnectionNotReady, ModbusError, OSError, ValueError):
-            return await self._async_create_device_entry(self._connection_id, unit_id)
+            async with async_get_temporary_unit(self.hass, params, unit_id) as unit:
+                presence_bits = await unit.read_discrete_inputs(16, 112)
+                validity_bits = await unit.read_discrete_inputs(128, 112)
 
-        if not isinstance(device, FourNoksGateway):
-            return await self._async_create_device_entry(self._connection_id, unit_id)
-
-        # Gateway detected! Read active nodes table:
-        # Presence: Discrete Inputs 16..127 (112 bits)
-        # Data validity: Discrete Inputs 128..239 (112 bits)
-        self._discovered_nodes = {unit_id: f"{device.info.model} (Unit {unit_id})"}
-        try:
-            presence_bits = await unit.read_discrete_inputs(16, 112)
-            validity_bits = await unit.read_discrete_inputs(128, 112)
-
-            for idx in range(min(len(presence_bits), len(validity_bits))):
-                if presence_bits[idx] and validity_bits[idx]:
-                    node_unit = 16 + idx
-                    try:
-                        node_unit_obj = async_get_unit(
-                            self.hass, self._connection_id, node_unit
-                        )
-                        node_dev = await async_probe_device(node_unit_obj)
-                        if node_dev.info.device_type_code == DeviceType.PLUG:
-                            self._discovered_nodes[node_unit] = (
-                                f"4-noks Smart Plug (Unit {node_unit})"
-                            )
-                        elif node_dev.info.device_type_code == DeviceType.GATEWAY:
-                            self._discovered_nodes[node_unit] = (
-                                f"4-noks Gateway (Unit {node_unit})"
-                            )
-                    except (ConnectionNotReady, ModbusError, OSError, ValueError):
-                        continue
-        except (ModbusError, OSError):
+                for idx in range(min(len(presence_bits), len(validity_bits))):
+                    if presence_bits[idx] and validity_bits[idx]:
+                        node_unit = 16 + idx
+                        try:
+                            async with async_get_temporary_unit(
+                                self.hass, params, node_unit
+                            ) as node_unit_obj:
+                                node_dev = await async_probe_device(node_unit_obj)
+                                if node_dev.info.device_type_code == DeviceType.PLUG:
+                                    self._discovered_nodes[node_unit] = (
+                                        f"4-noks Smart Plug (Unit {node_unit})"
+                                    )
+                                elif (
+                                    node_dev.info.device_type_code == DeviceType.GATEWAY
+                                ):
+                                    self._discovered_nodes[node_unit] = (
+                                        f"4-noks Gateway (Unit {node_unit})"
+                                    )
+                        except (HomeAssistantError, ModbusError, OSError, ValueError):
+                            continue
+        except (HomeAssistantError, ModbusError, OSError):
             pass
 
         if len(self._discovered_nodes) > 1:
             return await self.async_step_discover_nodes()
 
-        return await self._async_create_device_entry(self._connection_id, unit_id)
+        return await self._async_create_device_entry(
+            self._host, self._port, unit_id, gateway_dev.info.model
+        )
 
     async def async_step_discover_nodes(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Show discovered devices checklist to the user."""
+        assert self._host is not None
         if user_input is not None:
             selected = [int(x) for x in user_input.get(CONF_SELECTED_NODES, [])]
             if selected:
@@ -261,13 +167,14 @@ class FourNoksConfigFlow(ConfigFlow, domain=DOMAIN):
                             DOMAIN,
                             context={"source": "discovery"},
                             data={
-                                CONF_CONNECTION: self._connection_id,
+                                CONF_HOST: self._host,
+                                CONF_PORT: self._port,
                                 CONF_UNIT_ID: u,
                             },
                         )
                     )
                 return await self._async_create_device_entry(
-                    self._connection_id, primary_unit
+                    self._host, self._port, primary_unit
                 )
 
         options = [
@@ -292,45 +199,47 @@ class FourNoksConfigFlow(ConfigFlow, domain=DOMAIN):
 
     async def async_step_discovery(self, data: dict[str, Any]) -> ConfigFlowResult:
         """Handle background entry creation for discovered devices."""
-        conn_id = data[CONF_CONNECTION]
+        host = data[CONF_HOST]
+        port = int(data[CONF_PORT])
         unit_id = int(data[CONF_UNIT_ID])
-        await self.async_set_unique_id(f"{conn_id}_{unit_id}")
+        await self.async_set_unique_id(f"{host}:{port}:{unit_id}")
         self._abort_if_unique_id_configured()
-        title = await self._async_title(data) or f"4-noks ({unit_id})"
+
+        params = ModbusTcpParams(host=host, port=port)
+        title = None
+        try:
+            async with async_get_temporary_unit(self.hass, params, unit_id) as unit:
+                device = await async_probe_device(unit)
+                title = f"{device.info.model} ({unit_id})"
+        except (HomeAssistantError, ModbusError, OSError, ValueError):
+            pass
+
+        title = title or f"4-noks ({unit_id})"
         return self.async_create_entry(title=title, data=data)
 
     async def _async_create_device_entry(
-        self, connection_id: str, unit_id: int
+        self,
+        host: str,
+        port: int,
+        unit_id: int,
+        model_name: str | None = None,
     ) -> ConfigFlowResult:
-        """Validate and create an entry for a single device."""
-        data = {CONF_CONNECTION: connection_id, CONF_UNIT_ID: unit_id}
-        await self.async_set_unique_id(f"{connection_id}_{unit_id}")
+        """Create an entry for a single device."""
+        data = {CONF_HOST: host, CONF_PORT: port, CONF_UNIT_ID: unit_id}
+        await self.async_set_unique_id(f"{host}:{port}:{unit_id}")
         self._abort_if_unique_id_configured()
 
-        title = await self._async_title(data)
-        if title is None:
-            return self.async_show_form(
-                step_id="user",
-                data_schema=vol.Schema({}),
-                errors={"base": "cannot_connect"},
-            )
-        return self.async_create_entry(title=title, data=data)
+        if model_name is None:
+            params = ModbusTcpParams(host=host, port=port)
+            try:
+                async with async_get_temporary_unit(self.hass, params, unit_id) as unit:
+                    device = await async_probe_device(unit)
+                    model_name = device.info.model
+            except (HomeAssistantError, ModbusError, OSError, ValueError):
+                pass
 
-    async def _async_title(self, data: dict[str, Any]) -> str | None:
-        """Probe the device for the entry title, or return None if unreachable."""
-        try:
-            unit = async_get_unit(
-                self.hass, data[CONF_CONNECTION], int(data[CONF_UNIT_ID])
-            )
-            device = await async_probe_device(unit)
-            if device.info.device_type_code not in (
-                DeviceType.GATEWAY,
-                DeviceType.PLUG,
-            ):
-                return None
-        except (ConnectionNotReady, ModbusError, OSError, ValueError):
-            return None
-        return f"{device.info.model} ({int(data[CONF_UNIT_ID])})"
+        title = f"{model_name} ({unit_id})" if model_name else f"4-noks ({unit_id})"
+        return self.async_create_entry(title=title, data=data)
 
     @staticmethod
     @callback

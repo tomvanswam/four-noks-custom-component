@@ -5,50 +5,27 @@ from __future__ import annotations
 from unittest.mock import patch
 
 from homeassistant.config_entries import SOURCE_USER
-from homeassistant.const import CONF_SCAN_INTERVAL
+from homeassistant.const import CONF_HOST, CONF_PORT, CONF_SCAN_INTERVAL
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from modbus_connection import ModbusError
 from modbus_connection.mock import MockModbusConnection
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.four_noks.config_flow import (
+    CONF_AUTO_DISCOVER,
+    CONF_SELECTED_NODES,
+)
 from custom_components.four_noks.const import (
-    CONF_CONNECTION,
     CONF_UNIT_ID,
     DOMAIN,
 )
 
-from .conftest import UNIT_ID_GATEWAY, UNIT_ID_PLUG
+from .conftest import TEST_HOST, TEST_PORT, UNIT_ID_GATEWAY, UNIT_ID_PLUG
 
 
-async def test_user_flow_smart_plug(
-    hass: HomeAssistant, connection_entry: MockConfigEntry
-) -> None:
-    """Selecting connection and plug unit probes the plug and creates the entry."""
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN, context={"source": SOURCE_USER}
-    )
-    assert result["type"] is FlowResultType.FORM
-    assert result["step_id"] == "user"
-
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        {CONF_CONNECTION: connection_entry.entry_id, CONF_UNIT_ID: UNIT_ID_PLUG},
-    )
-    await hass.async_block_till_done()
-
-    assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert result["title"] == f"ZR-PLUG-M ({UNIT_ID_PLUG})"
-    assert result["data"][CONF_CONNECTION] == connection_entry.entry_id
-    assert result["data"][CONF_UNIT_ID] == UNIT_ID_PLUG
-
-
-async def test_user_flow_gateway(
-    hass: HomeAssistant, connection_entry: MockConfigEntry
-) -> None:
-    """Selecting connection and gateway unit probes and creates the entry."""
-    from custom_components.four_noks.config_flow import CONF_AUTO_DISCOVER
-
+async def test_user_flow_smart_plug(hass: HomeAssistant) -> None:
+    """Selecting host, port and plug unit probes the plug and creates the entry."""
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": SOURCE_USER}
     )
@@ -58,7 +35,34 @@ async def test_user_flow_gateway(
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
         {
-            CONF_CONNECTION: connection_entry.entry_id,
+            CONF_HOST: TEST_HOST,
+            CONF_PORT: TEST_PORT,
+            CONF_UNIT_ID: UNIT_ID_PLUG,
+            CONF_AUTO_DISCOVER: False,
+        },
+    )
+    await hass.async_block_till_done()
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["title"] == f"ZR-PLUG-M ({UNIT_ID_PLUG})"
+    assert result["data"][CONF_HOST] == TEST_HOST
+    assert result["data"][CONF_PORT] == TEST_PORT
+    assert result["data"][CONF_UNIT_ID] == UNIT_ID_PLUG
+
+
+async def test_user_flow_gateway(hass: HomeAssistant) -> None:
+    """Selecting host, port and gateway unit probes and creates the entry."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "user"
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            CONF_HOST: TEST_HOST,
+            CONF_PORT: TEST_PORT,
             CONF_UNIT_ID: UNIT_ID_GATEWAY,
             CONF_AUTO_DISCOVER: False,
         },
@@ -67,23 +71,21 @@ async def test_user_flow_gateway(
 
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["title"] == f"ZC-GW-ETH-EM ({UNIT_ID_GATEWAY})"
-    assert result["data"][CONF_CONNECTION] == connection_entry.entry_id
+    assert result["data"][CONF_HOST] == TEST_HOST
+    assert result["data"][CONF_PORT] == TEST_PORT
     assert result["data"][CONF_UNIT_ID] == UNIT_ID_GATEWAY
 
 
-async def test_user_flow_gateway_discovery_step(
-    hass: HomeAssistant, connection_entry: MockConfigEntry
-) -> None:
-    """Gateway flow with auto_discover shows discovery step."""
-    from custom_components.four_noks.config_flow import CONF_AUTO_DISCOVER
-
+async def test_user_flow_gateway_discovery_step(hass: HomeAssistant) -> None:
+    """Gateway flow with auto_discover shows discovery step and creates entries."""
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": SOURCE_USER}
     )
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
         {
-            CONF_CONNECTION: connection_entry.entry_id,
+            CONF_HOST: TEST_HOST,
+            CONF_PORT: TEST_PORT,
             CONF_UNIT_ID: UNIT_ID_GATEWAY,
             CONF_AUTO_DISCOVER: True,
         },
@@ -91,10 +93,19 @@ async def test_user_flow_gateway_discovery_step(
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "discover_nodes"
 
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {CONF_SELECTED_NODES: [str(UNIT_ID_GATEWAY), str(UNIT_ID_PLUG)]},
+    )
+    await hass.async_block_till_done()
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["title"] == f"ZC-GW-ETH-EM ({UNIT_ID_GATEWAY})"
+    assert result["data"][CONF_UNIT_ID] == UNIT_ID_GATEWAY
+
 
 async def test_user_flow_cannot_connect(
     hass: HomeAssistant,
-    connection_entry: MockConfigEntry,
     mock_modbus_connection: MockModbusConnection,
 ) -> None:
     """A connection failure during probe surfaces cannot_connect error."""
@@ -108,7 +119,12 @@ async def test_user_flow_cannot_connect(
         )
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
-            {CONF_CONNECTION: connection_entry.entry_id, CONF_UNIT_ID: UNIT_ID_PLUG},
+            {
+                CONF_HOST: TEST_HOST,
+                CONF_PORT: TEST_PORT,
+                CONF_UNIT_ID: UNIT_ID_PLUG,
+                CONF_AUTO_DISCOVER: False,
+            },
         )
         assert result["type"] is FlowResultType.FORM
         assert result["errors"] == {"base": "cannot_connect"}

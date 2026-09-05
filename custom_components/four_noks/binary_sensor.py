@@ -14,11 +14,12 @@ from homeassistant.components.binary_sensor import (
     BinarySensorEntity,
     BinarySensorEntityDescription,
 )
+from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from .const import CONF_CONNECTION, CONF_UNIT_ID, DOMAIN
+from .const import CONF_UNIT_ID, DOMAIN
 from .coordinator import FourNoksConfigEntry, FourNoksCoordinator
 from .entity import FourNoksEntity
 
@@ -100,10 +101,12 @@ async def async_setup_entry(
 
         # Add presence and data_valid for each child device configured on this
         # connection
-        conn_id = entry.data.get(CONF_CONNECTION)
+        host = entry.data.get(CONF_HOST)
+        port = entry.data.get(CONF_PORT)
         for conf_entry in hass.config_entries.async_entries(DOMAIN):
             if (
-                conf_entry.data.get(CONF_CONNECTION) == conn_id
+                conf_entry.data.get(CONF_HOST) == host
+                and conf_entry.data.get(CONF_PORT) == port
                 and int(conf_entry.data.get(CONF_UNIT_ID, 1)) > 1
             ):
                 child_unit = int(conf_entry.data[CONF_UNIT_ID])
@@ -183,11 +186,14 @@ class FourNoksGatewayUnconfiguredPresenceBinarySensor(
 
     def _get_configured_node_ids(self) -> set[int]:
         """Get all node IDs configured in Home Assistant for this connection."""
-        conn_id = self.coordinator.config_entry.data.get(CONF_CONNECTION)
+        host = self.coordinator.config_entry.data.get(CONF_HOST)
+        port = self.coordinator.config_entry.data.get(CONF_PORT)
         return {
             int(entry.data[CONF_UNIT_ID])
             for entry in self.hass.config_entries.async_entries(DOMAIN)
-            if entry.data.get(CONF_CONNECTION) == conn_id and CONF_UNIT_ID in entry.data
+            if entry.data.get(CONF_HOST) == host
+            and entry.data.get(CONF_PORT) == port
+            and CONF_UNIT_ID in entry.data
         }
 
     def _get_unconfigured_present_nodes(self) -> list[int]:

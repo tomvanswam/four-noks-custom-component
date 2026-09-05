@@ -7,7 +7,6 @@
         "data": {
           "host": "Host / IP address",
           "port": "Port",
-          "connection_entry_id": "Modbus connection",
           "unit_id": "Unit address",
           "auto_discover": "Discover connected devices via Gateway"
         },
@@ -16,14 +15,6 @@
           "port": "Modbus TCP port (default 502).",
           "unit_id": "Station address: 1 for Gateway, 16–126 for Smart Plugs.",
           "auto_discover": "When configuring Unit 1 (Gateway), automatically detect all active nodes in the Zigbee network."
-        }
-      },
-      "new_connection": {
-        "title": "New Modbus Connection",
-        "description": "Enter the connection details for the Modbus TCP endpoint.",
-        "data": {
-          "host": "Host / IP address",
-          "port": "Port"
         }
       },
       "discover_nodes": {

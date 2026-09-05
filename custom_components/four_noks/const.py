@@ -5,7 +5,6 @@ from typing import Final
 
 DOMAIN: Final = "four_noks"
 
-CONF_CONNECTION: Final = "connection_entry_id"
 CONF_UNIT_ID: Final = "unit_id"
 
 DEFAULT_UNIT_ID: Final = 1

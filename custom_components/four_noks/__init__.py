@@ -1,23 +1,20 @@
 """The 4-noks integration.
 
-4-noks devices communicate over Modbus. This integration borrows a ``ModbusUnit``
-from a ``modbus_connection`` config entry and delegates device handling to the
-``four_noks_modbus`` library.
+4-noks devices communicate over Modbus. This integration connects via Home Assistant's
+native modbus component and delegates device handling to the four_noks_modbus library.
 """
+
+from homeassistant.components.modbus import async_get_unit
+from homeassistant.const import CONF_HOST, CONF_PORT, Platform
+from homeassistant.core import HomeAssistant
+from modbus_connection import ModbusTcpParams
 
 try:
     from four_noks_modbus import async_probe_device
 except ImportError:
     from .vendor.four_noks_modbus import async_probe_device
 
-try:
-    from homeassistant.components.modbus_connection import async_get_unit
-except ImportError:
-    from custom_components.modbus_connection import async_get_unit
-from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant
-
-from .const import CONF_CONNECTION, CONF_UNIT_ID
+from .const import CONF_UNIT_ID
 from .coordinator import FourNoksConfigEntry, FourNoksCoordinator
 
 PLATFORMS = [
@@ -31,9 +28,11 @@ PLATFORMS = [
 
 async def async_setup_entry(hass: HomeAssistant, entry: FourNoksConfigEntry) -> bool:
     """Set up 4-noks from a config entry."""
-    unit = async_get_unit(
-        hass, entry.data[CONF_CONNECTION], int(entry.data[CONF_UNIT_ID])
+    params = ModbusTcpParams(
+        host=entry.data[CONF_HOST],
+        port=entry.data[CONF_PORT],
     )
+    unit = async_get_unit(hass, entry, params, int(entry.data[CONF_UNIT_ID]))
     device = await async_probe_device(unit)
     coordinator = FourNoksCoordinator(hass, entry, device)
 

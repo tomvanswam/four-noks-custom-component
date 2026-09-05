@@ -3,28 +3,19 @@
 from datetime import timedelta
 import logging
 
+from homeassistant.components.modbus import async_get_unit
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import CONF_HOST, CONF_PORT, CONF_SCAN_INTERVAL
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from modbus_connection import ModbusError, ModbusTcpParams
+
 try:
     from four_noks_modbus import FourNoksDevice
 except ImportError:
     from .vendor.four_noks_modbus import FourNoksDevice
 
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_SCAN_INTERVAL
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-from modbus_connection import ModbusError
-
-try:
-    from homeassistant.components.modbus_connection import async_get_unit
-except ImportError:
-    from custom_components.modbus_connection import async_get_unit
-
-from .const import (
-    CONF_CONNECTION,
-    CONF_UNIT_ID,
-    DEFAULT_SCAN_INTERVAL,
-    DOMAIN,
-)
+from .const import CONF_UNIT_ID, DEFAULT_SCAN_INTERVAL, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -59,7 +50,7 @@ class FourNoksCoordinator(DataUpdateCoordinator[FourNoksDevice]):
         self.nodes_data_valid: dict[int, bool] = {}
 
     async def _async_update_data(self) -> FourNoksDevice:
-        """Fetch data from device and gateway status."""
+        """Fetch data from the 4-noks device."""
         try:
             await self.device.async_update()
         except ModbusError as err:
@@ -68,7 +59,8 @@ class FourNoksCoordinator(DataUpdateCoordinator[FourNoksDevice]):
             ) from err
 
         unit_id = int(self.config_entry.data.get(CONF_UNIT_ID, 1))
-        connection_id = self.config_entry.data.get(CONF_CONNECTION)
+        host = self.config_entry.data.get(CONF_HOST)
+        port = int(self.config_entry.data.get(CONF_PORT, 502))
 
         # For gateway (unit 1), fetch full presence and data validity tables
         # (nodes 16..127)
@@ -88,9 +80,10 @@ class FourNoksCoordinator(DataUpdateCoordinator[FourNoksDevice]):
 
         # For node devices (e.g. Smart Plug unit 16..126),
         # query gateway unit 1 for status
-        if unit_id > 1 and connection_id:
+        if unit_id > 1 and host:
             try:
-                gw_unit = async_get_unit(self.hass, connection_id, 1)
+                params = ModbusTcpParams(host=host, port=port)
+                gw_unit = async_get_unit(self.hass, self.config_entry, params, 1)
                 # Discrete input at unit_id (presence)
                 presence_bits = await gw_unit.read_discrete_inputs(unit_id, 1)
                 self.gateway_node_presence = (
