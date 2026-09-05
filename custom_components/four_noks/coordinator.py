@@ -55,6 +55,8 @@ class FourNoksCoordinator(DataUpdateCoordinator[FourNoksDevice]):
         self.device = device
         self.gateway_node_presence: bool | None = None
         self.gateway_node_data_valid: bool | None = None
+        self.nodes_presence: dict[int, bool] = {}
+        self.nodes_data_valid: dict[int, bool] = {}
 
     async def _async_update_data(self) -> FourNoksDevice:
         """Fetch data from device and gateway status."""
@@ -67,6 +69,21 @@ class FourNoksCoordinator(DataUpdateCoordinator[FourNoksDevice]):
 
         unit_id = int(self.config_entry.data.get(CONF_UNIT_ID, 1))
         connection_id = self.config_entry.data.get(CONF_CONNECTION)
+
+        # For gateway (unit 1), fetch full presence and data validity tables (nodes 16..127)
+        if unit_id == 1:
+            try:
+                unit = self.device.unit
+                presence_bits = await unit.read_discrete_inputs(16, 112)
+                validity_bits = await unit.read_discrete_inputs(128, 112)
+                self.nodes_presence = {
+                    16 + i: bool(presence_bits[i]) for i in range(len(presence_bits))
+                }
+                self.nodes_data_valid = {
+                    16 + i: bool(validity_bits[i]) for i in range(len(validity_bits))
+                }
+            except (ModbusError, OSError) as err:
+                _LOGGER.debug("Could not read gateway nodes status: %s", err)
 
         # For node devices (e.g. Smart Plug unit 16..126),
         # query gateway unit 1 for status
@@ -91,3 +108,4 @@ class FourNoksCoordinator(DataUpdateCoordinator[FourNoksDevice]):
                 )
 
         return self.device
+

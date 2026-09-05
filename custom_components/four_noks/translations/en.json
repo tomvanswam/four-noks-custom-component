@@ -165,6 +165,12 @@
       },
       "network_open_state": {
         "name": "Discovery open"
+      },
+      "device_node_presence": {
+        "name": "Device {node_id} presence"
+      },
+      "device_node_data_valid": {
+        "name": "Device {node_id} data valid"
       }
     },
     "number": {

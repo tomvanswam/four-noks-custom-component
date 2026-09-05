@@ -17,6 +17,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
+from .const import CONF_CONNECTION, CONF_UNIT_ID, DOMAIN
 from .coordinator import FourNoksConfigEntry, FourNoksCoordinator
 from .entity import FourNoksEntity
 
@@ -95,14 +96,32 @@ async def async_setup_entry(
 ) -> None:
     """Set up 4-noks binary sensors."""
     coordinator = entry.runtime_data
-    descriptions: tuple[FourNoksBinarySensorDescription, ...] = ()
 
     if isinstance(coordinator.device, FourNoksPlug):
-        descriptions = PLUG_BINARY_SENSORS
+        async_add_entities(
+            FourNoksBinarySensor(coordinator, desc) for desc in PLUG_BINARY_SENSORS
+        )
     elif isinstance(coordinator.device, FourNoksGateway):
-        descriptions = GATEWAY_BINARY_SENSORS
+        entities: list[BinarySensorEntity] = [
+            FourNoksBinarySensor(coordinator, desc) for desc in GATEWAY_BINARY_SENSORS
+        ]
 
-    async_add_entities(FourNoksBinarySensor(coordinator, desc) for desc in descriptions)
+        # Add presence and data_valid for each child device configured on this connection
+        conn_id = entry.data.get(CONF_CONNECTION)
+        for conf_entry in hass.config_entries.async_entries(DOMAIN):
+            if (
+                conf_entry.data.get(CONF_CONNECTION) == conn_id
+                and int(conf_entry.data.get(CONF_UNIT_ID, 1)) > 1
+            ):
+                child_unit = int(conf_entry.data[CONF_UNIT_ID])
+                entities.append(
+                    FourNoksGatewayNodeBinarySensor(coordinator, child_unit, "presence")
+                )
+                entities.append(
+                    FourNoksGatewayNodeBinarySensor(coordinator, child_unit, "data_valid")
+                )
+
+        async_add_entities(entities)
 
 
 class FourNoksBinarySensor(FourNoksEntity, BinarySensorEntity):
@@ -123,3 +142,31 @@ class FourNoksBinarySensor(FourNoksEntity, BinarySensorEntity):
     def is_on(self) -> bool | None:
         """Return true if the binary sensor is on."""
         return self.entity_description.is_on_fn(self.coordinator)
+
+
+class FourNoksGatewayNodeBinarySensor(FourNoksEntity, BinarySensorEntity):
+    """Binary sensor on the Gateway device representing a child device's presence or data validity."""
+
+    _attr_device_class = BinarySensorDeviceClass.CONNECTIVITY
+
+    def __init__(
+        self,
+        coordinator: FourNoksCoordinator,
+        node_unit_id: int,
+        sensor_type: str,
+    ) -> None:
+        """Initialize the gateway node binary sensor."""
+        key = f"node_{node_unit_id}_{sensor_type}"
+        super().__init__(coordinator, key)
+        self._node_unit_id = node_unit_id
+        self._sensor_type = sensor_type
+        self._attr_translation_key = f"device_node_{sensor_type}"
+        self._attr_translation_placeholders = {"node_id": str(node_unit_id)}
+
+    @property
+    def is_on(self) -> bool | None:
+        """Return true if node is present or data is valid."""
+        if self._sensor_type == "presence":
+            return self.coordinator.nodes_presence.get(self._node_unit_id)
+        return self.coordinator.nodes_data_valid.get(self._node_unit_id)
+
