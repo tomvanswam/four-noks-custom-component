@@ -4,8 +4,16 @@
 native modbus component and delegates device handling to the four_noks_modbus library.
 """
 
+import logging
+
+from awesomeversion import AwesomeVersion
 from homeassistant.components.modbus import async_get_unit
-from homeassistant.const import CONF_HOST, CONF_PORT, Platform
+from homeassistant.const import (
+    CONF_HOST,
+    CONF_PORT,
+    Platform,
+    __version__ as HA_VERSION,
+)
 from homeassistant.core import HomeAssistant
 from modbus_connection import ModbusTcpParams
 
@@ -16,6 +24,10 @@ except ImportError:
 
 from .const import CONF_UNIT_ID
 from .coordinator import FourNoksConfigEntry, FourNoksCoordinator
+
+_LOGGER = logging.getLogger(__name__)
+
+MIN_HA_VERSION = "2026.9.0"
 
 PLATFORMS = [
     Platform.BINARY_SENSOR,
@@ -28,6 +40,14 @@ PLATFORMS = [
 
 async def async_setup_entry(hass: HomeAssistant, entry: FourNoksConfigEntry) -> bool:
     """Set up 4-noks from a config entry."""
+    if AwesomeVersion(HA_VERSION) < AwesomeVersion(MIN_HA_VERSION):
+        _LOGGER.error(
+            "The 4-noks integration requires Home Assistant %s or newer (current: %s)",
+            MIN_HA_VERSION,
+            HA_VERSION,
+        )
+        return False
+
     params = ModbusTcpParams(
         host=entry.data[CONF_HOST],
         port=entry.data[CONF_PORT],
