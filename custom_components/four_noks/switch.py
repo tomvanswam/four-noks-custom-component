@@ -1,6 +1,7 @@
-"""Switch platform for 4-noks Smart Plugs."""
-
+import asyncio
 from typing import Any
+
+from modbus_connection import ModbusError
 
 try:
     from four_noks_modbus import FourNoksPlug
@@ -47,16 +48,44 @@ class FourNoksPlugSwitch(FourNoksEntity, SwitchEntity):
             return device.switch.output_state
         return None
 
+    async def _async_wait_for_pending_clear(
+        self, timeout: float = 5.0, poll_interval: float = 0.1
+    ) -> None:
+        """Wait until coil write pending status (DI 48) is cleared to False."""
+        device = self.coordinator.device
+        if hasattr(device, "switch") and hasattr(device.switch, "async_wait_pending"):
+            await device.switch.async_wait_pending(
+                timeout=timeout, poll_interval=poll_interval
+            )
+            return
+
+        unit = getattr(device, "unit", None)
+        if unit is None:
+            return
+
+        start_time = asyncio.get_running_loop().time()
+        while asyncio.get_running_loop().time() - start_time < timeout:
+            await asyncio.sleep(poll_interval)
+            try:
+                bits = await unit.read_discrete_inputs(48, 1)
+                if bits and not bits[0]:
+                    break
+            except (ModbusError, OSError):
+                pass
+
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the switch on."""
         device = self.coordinator.device
         if isinstance(device, FourNoksPlug):
             await device.async_turn_on()
-            await self.coordinator.async_request_refresh()
+            await self._async_wait_for_pending_clear()
+            await self.coordinator.async_refresh()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the switch off."""
         device = self.coordinator.device
         if isinstance(device, FourNoksPlug):
             await device.async_turn_off()
-            await self.coordinator.async_request_refresh()
+            await self._async_wait_for_pending_clear()
+            await self.coordinator.async_refresh()
+

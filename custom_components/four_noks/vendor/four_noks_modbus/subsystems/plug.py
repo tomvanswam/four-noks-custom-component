@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import asyncio
+
+from modbus_connection import ModbusError
+
 from ..data_model import (
     FourNoksComponent,
     coil,
@@ -87,6 +91,7 @@ class PlugSwitch(FourNoksComponent):
 
     output_state = discrete_input(0, description="Output State (Relay ON/OFF)")
     standby_killer_status = discrete_input(1, description="Standby Killer Status")
+    coils_pending = discrete_input(48, description="CoilStatus Writing Pending")
     presence = discrete_input(64, description="Device Presence Status")
     general_pending = discrete_input(65, description="General Pending Status")
 
@@ -102,6 +107,21 @@ class PlugSwitch(FourNoksComponent):
     _data_save_coil = coil(
         5, writable=True, description="Save Data to Non-Volatile Memory Command"
     )
+
+    async def async_wait_pending(
+        self, timeout: float = 5.0, poll_interval: float = 0.1
+    ) -> bool:
+        """Wait until coil write pending status (DI 48) is cleared to False."""
+        start_time = asyncio.get_running_loop().time()
+        while asyncio.get_running_loop().time() - start_time < timeout:
+            await asyncio.sleep(poll_interval)
+            try:
+                bits = await self._unit.read_discrete_inputs(48, 1)
+                if bits and not bits[0]:
+                    return True
+            except (ModbusError, OSError):
+                pass
+        return False
 
     async def async_turn_on(self) -> None:
         """Turn on the plug relay via coil 1."""
