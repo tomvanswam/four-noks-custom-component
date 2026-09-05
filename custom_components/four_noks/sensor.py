@@ -2,6 +2,7 @@
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any
 
 try:
     from four_noks_modbus import FourNoksDevice, FourNoksGateway, FourNoksPlug
@@ -33,6 +34,7 @@ class FourNoksSensorDescription(SensorEntityDescription):
     """Describes a 4-noks sensor entity."""
 
     value_fn: Callable[[FourNoksDevice], float | int | str | None]
+    attributes_fn: Callable[[FourNoksDevice], dict[str, Any]] | None = None
 
 
 PLUG_SENSORS: tuple[FourNoksSensorDescription, ...] = (
@@ -185,18 +187,35 @@ GATEWAY_SENSORS: tuple[FourNoksSensorDescription, ...] = (
         ),
     ),
     FourNoksSensorDescription(
-        key="node_count",
-        translation_key="node_count",
+        key="nodes",
+        translation_key="nodes",
         state_class=SensorStateClass.MEASUREMENT,
-        entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda d: getattr(getattr(d, "radio", None), "node_count", None),
+        attributes_fn=lambda d: {
+            "bridge_end_devices": getattr(
+                getattr(d, "radio", None), "bridge_devices_count", None
+            ),
+            "local_end_devices": getattr(
+                getattr(d, "radio", None), "end_devices_count", None
+            ),
+            "routers_total": getattr(
+                getattr(d, "radio", None), "routers_total", None
+            ),
+        },
     ),
     FourNoksSensorDescription(
-        key="routers_total",
-        translation_key="routers_total",
+        key="routers",
+        translation_key="routers",
         state_class=SensorStateClass.MEASUREMENT,
-        entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda d: getattr(getattr(d, "radio", None), "routers_total", None),
+        attributes_fn=lambda d: {
+            "good_router_neighbours": getattr(
+                getattr(d, "radio", None), "routers_good", None
+            ),
+            "router_neighbours": getattr(
+                getattr(d, "radio", None), "routers_neighbours", None
+            ),
+        },
     ),
     FourNoksSensorDescription(
         key="network_channel",
@@ -215,24 +234,6 @@ GATEWAY_SENSORS: tuple[FourNoksSensorDescription, ...] = (
         translation_key="gateway_address",
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda d: getattr(getattr(d, "radio", None), "gateway_address", None),
-    ),
-    FourNoksSensorDescription(
-        key="bridge_devices_count",
-        translation_key="bridge_devices_count",
-        state_class=SensorStateClass.MEASUREMENT,
-        entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda d: getattr(
-            getattr(d, "radio", None), "bridge_devices_count", None
-        ),
-    ),
-    FourNoksSensorDescription(
-        key="end_devices_count",
-        translation_key="end_devices_count",
-        state_class=SensorStateClass.MEASUREMENT,
-        entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda d: getattr(
-            getattr(d, "radio", None), "end_devices_count", None
-        ),
     ),
     FourNoksSensorDescription(
         key="resets_count",
@@ -255,22 +256,6 @@ GATEWAY_SENSORS: tuple[FourNoksSensorDescription, ...] = (
         value_fn=lambda d: getattr(
             getattr(d, "radio", None), "free_packet_buffer", None
         ),
-    ),
-    FourNoksSensorDescription(
-        key="routers_neighbours",
-        translation_key="routers_neighbours",
-        state_class=SensorStateClass.MEASUREMENT,
-        entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda d: getattr(
-            getattr(d, "radio", None), "routers_neighbours", None
-        ),
-    ),
-    FourNoksSensorDescription(
-        key="routers_good",
-        translation_key="routers_good",
-        state_class=SensorStateClass.MEASUREMENT,
-        entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda d: getattr(getattr(d, "radio", None), "routers_good", None),
     ),
 )
 
@@ -310,3 +295,10 @@ class FourNoksSensor(FourNoksEntity, SensorEntity):
     def native_value(self) -> float | int | str | None:
         """Return native state value."""
         return self.entity_description.value_fn(self.coordinator.device)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Return entity specific state attributes."""
+        if self.entity_description.attributes_fn:
+            return self.entity_description.attributes_fn(self.coordinator.device)
+        return None

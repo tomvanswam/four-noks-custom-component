@@ -107,6 +107,12 @@
       "messages_received": {
         "name": "Messages received"
       },
+      "nodes": {
+        "name": "Nodes"
+      },
+      "routers": {
+        "name": "Routers"
+      },
       "node_count": {
         "name": "Connected nodes"
       },
