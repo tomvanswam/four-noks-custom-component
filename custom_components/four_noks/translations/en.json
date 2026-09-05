@@ -116,12 +116,6 @@
       "routers": {
         "name": "Routers"
       },
-      "node_count": {
-        "name": "Connected nodes"
-      },
-      "routers_total": {
-        "name": "Total routers"
-      },
       "network_channel": {
         "name": "Network channel"
       },
@@ -131,12 +125,6 @@
       "gateway_address": {
         "name": "Gateway address"
       },
-      "bridge_devices_count": {
-        "name": "Bridge end devices"
-      },
-      "end_devices_count": {
-        "name": "Local end devices"
-      },
       "resets_count": {
         "name": "Resets count"
       },
@@ -145,12 +133,6 @@
       },
       "free_packet_buffer": {
         "name": "Free packet buffer"
-      },
-      "routers_neighbours": {
-        "name": "Router neighbours"
-      },
-      "routers_good": {
-        "name": "Good router neighbours"
       }
     },
     "binary_sensor": {
