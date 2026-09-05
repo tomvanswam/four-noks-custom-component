@@ -25,8 +25,14 @@ except ImportError:
         async_get_unit,
     )
 
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
-from homeassistant.const import CONF_HOST, CONF_PORT
+from homeassistant.config_entries import (
+    ConfigEntry,
+    ConfigFlow,
+    ConfigFlowResult,
+    OptionsFlow,
+)
+from homeassistant.const import CONF_HOST, CONF_PORT, CONF_SCAN_INTERVAL
+from homeassistant.core import callback
 from homeassistant.helpers.selector import (
     BooleanSelector,
     NumberSelector,
@@ -39,7 +45,13 @@ from homeassistant.helpers.selector import (
     TextSelector,
 )
 
-from .const import CONF_CONNECTION, CONF_UNIT_ID, DEFAULT_UNIT_ID, DOMAIN
+from .const import (
+    CONF_CONNECTION,
+    CONF_UNIT_ID,
+    DEFAULT_SCAN_INTERVAL,
+    DEFAULT_UNIT_ID,
+    DOMAIN,
+)
 
 CONF_AUTO_DISCOVER = "auto_discover"
 CONF_SELECTED_NODES = "selected_nodes"
@@ -319,3 +331,46 @@ class FourNoksConfigFlow(ConfigFlow, domain=DOMAIN):
         except (ConnectionNotReady, ModbusError, OSError, ValueError):
             return None
         return f"{device.info.model} ({int(data[CONF_UNIT_ID])})"
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(
+        config_entry: ConfigEntry,
+    ) -> OptionsFlow:
+        """Get the options flow for this handler."""
+        return FourNoksOptionsFlow()
+
+
+class FourNoksOptionsFlow(OptionsFlow):
+    """Handle options flow for a 4-noks device."""
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Manage 4-noks device options."""
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
+
+        current_interval = self.config_entry.options.get(
+            CONF_SCAN_INTERVAL,
+            self.config_entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
+        )
+
+        schema = vol.Schema(
+            {
+                vol.Required(
+                    CONF_SCAN_INTERVAL,
+                    default=current_interval,
+                ): NumberSelector(
+                    NumberSelectorConfig(
+                        min=5,
+                        max=3600,
+                        step=1,
+                        mode=NumberSelectorMode.BOX,
+                        unit_of_measurement="s",
+                    )
+                ),
+            }
+        )
+        return self.async_show_form(step_id="init", data_schema=schema)
+

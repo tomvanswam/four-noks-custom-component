@@ -1,5 +1,6 @@
 """DataUpdateCoordinator for 4-noks Modbus devices."""
 
+from datetime import timedelta
 import logging
 
 try:
@@ -17,7 +18,13 @@ try:
 except ImportError:
     from custom_components.modbus_connection import async_get_unit
 
-from .const import CONF_CONNECTION, CONF_UNIT_ID, DOMAIN, SCAN_INTERVAL
+from .const import (
+    CONF_CONNECTION,
+    CONF_SCAN_INTERVAL,
+    CONF_UNIT_ID,
+    DEFAULT_SCAN_INTERVAL,
+    DOMAIN,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -34,12 +41,16 @@ class FourNoksCoordinator(DataUpdateCoordinator[FourNoksDevice]):
         device: FourNoksDevice,
     ) -> None:
         """Initialize the coordinator."""
+        scan_interval_sec = entry.options.get(
+            CONF_SCAN_INTERVAL,
+            entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
+        )
         super().__init__(
             hass,
             _LOGGER,
             name=DOMAIN,
             config_entry=entry,
-            update_interval=SCAN_INTERVAL,
+            update_interval=timedelta(seconds=scan_interval_sec),
         )
         self.device = device
         self.gateway_node_presence: bool | None = None

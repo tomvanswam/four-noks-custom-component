@@ -41,6 +41,20 @@
       "already_configured": "This 4-noks device is already configured."
     }
   },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Device Options",
+        "description": "Configure settings for this 4-noks device.",
+        "data": {
+          "scan_interval": "Polling interval (seconds)"
+        },
+        "data_description": {
+          "scan_interval": "How often to poll data from this device via Modbus (in seconds). Default is 30 seconds."
+        }
+      }
+    }
+  },
   "entity": {
     "switch": {
       "plug_relay": {

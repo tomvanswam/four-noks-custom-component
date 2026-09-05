@@ -48,6 +48,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: FourNoksConfigEntry) -> 
         )
     )
 
+    # Reload on options update (e.g. scan interval changed)
+    entry.async_on_unload(entry.add_update_listener(async_reload_entry))
+
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
@@ -55,3 +58,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: FourNoksConfigEntry) -> 
 async def async_unload_entry(hass: HomeAssistant, entry: FourNoksConfigEntry) -> bool:
     """Unload a config entry."""
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+
+
+async def async_reload_entry(hass: HomeAssistant, entry: FourNoksConfigEntry) -> None:
+    """Reload config entry when options are updated."""
+    await hass.config_entries.async_reload(entry.entry_id)
+
