@@ -198,9 +198,7 @@ GATEWAY_SENSORS: tuple[FourNoksSensorDescription, ...] = (
             "local_end_devices": getattr(
                 getattr(d, "radio", None), "end_devices_count", None
             ),
-            "routers_total": getattr(
-                getattr(d, "radio", None), "routers_total", None
-            ),
+            "routers_total": getattr(getattr(d, "radio", None), "routers_total", None),
         },
     ),
     FourNoksSensorDescription(

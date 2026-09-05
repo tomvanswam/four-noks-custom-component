@@ -1,3 +1,5 @@
+"""Switch platform for the 4-noks integration."""
+
 import asyncio
 from typing import Any
 
@@ -148,6 +150,3 @@ class FourNoksGatewayDiscoverySwitch(FourNoksEntity, SwitchEntity):
             await device.async_close_discovery()
             await self._async_wait_for_discovery_state(False)
             await self.coordinator.async_refresh()
-
-
-

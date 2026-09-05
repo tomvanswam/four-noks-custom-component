@@ -63,4 +63,3 @@ async def async_unload_entry(hass: HomeAssistant, entry: FourNoksConfigEntry) ->
 async def async_reload_entry(hass: HomeAssistant, entry: FourNoksConfigEntry) -> None:
     """Reload config entry when options are updated."""
     await hass.config_entries.async_reload(entry.entry_id)
-

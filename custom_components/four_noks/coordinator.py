@@ -70,7 +70,8 @@ class FourNoksCoordinator(DataUpdateCoordinator[FourNoksDevice]):
         unit_id = int(self.config_entry.data.get(CONF_UNIT_ID, 1))
         connection_id = self.config_entry.data.get(CONF_CONNECTION)
 
-        # For gateway (unit 1), fetch full presence and data validity tables (nodes 16..127)
+        # For gateway (unit 1), fetch full presence and data validity tables
+        # (nodes 16..127)
         if unit_id == 1:
             try:
                 unit = self.device.unit
@@ -108,4 +109,3 @@ class FourNoksCoordinator(DataUpdateCoordinator[FourNoksDevice]):
                 )
 
         return self.device
-

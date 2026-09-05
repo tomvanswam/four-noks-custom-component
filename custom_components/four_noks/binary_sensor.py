@@ -98,7 +98,8 @@ async def async_setup_entry(
             FourNoksBinarySensor(coordinator, desc) for desc in GATEWAY_BINARY_SENSORS
         ]
 
-        # Add presence and data_valid for each child device configured on this connection
+        # Add presence and data_valid for each child device configured on this
+        # connection
         conn_id = entry.data.get(CONF_CONNECTION)
         for conf_entry in hass.config_entries.async_entries(DOMAIN):
             if (
@@ -110,7 +111,9 @@ async def async_setup_entry(
                     FourNoksGatewayNodeBinarySensor(coordinator, child_unit, "presence")
                 )
                 entities.append(
-                    FourNoksGatewayNodeBinarySensor(coordinator, child_unit, "data_valid")
+                    FourNoksGatewayNodeBinarySensor(
+                        coordinator, child_unit, "data_valid"
+                    )
                 )
 
         # Add unconfigured device presence sensor
@@ -140,7 +143,7 @@ class FourNoksBinarySensor(FourNoksEntity, BinarySensorEntity):
 
 
 class FourNoksGatewayNodeBinarySensor(FourNoksEntity, BinarySensorEntity):
-    """Binary sensor on the Gateway device representing a child device's presence or data validity."""
+    """Binary sensor on Gateway for child device presence or data validity."""
 
     _attr_device_class = BinarySensorDeviceClass.CONNECTIVITY
 
@@ -211,5 +214,3 @@ class FourNoksGatewayUnconfiguredPresenceBinarySensor(
             "unconfigured_nodes": nodes,
             "count": len(nodes),
         }
-
-
