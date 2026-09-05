@@ -2,6 +2,7 @@
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any
 
 try:
     from four_noks_modbus import FourNoksGateway, FourNoksPlug
@@ -121,6 +122,9 @@ async def async_setup_entry(
                     FourNoksGatewayNodeBinarySensor(coordinator, child_unit, "data_valid")
                 )
 
+        # Add unconfigured device presence sensor
+        entities.append(FourNoksGatewayUnconfiguredPresenceBinarySensor(coordinator))
+
         async_add_entities(entities)
 
 
@@ -169,4 +173,52 @@ class FourNoksGatewayNodeBinarySensor(FourNoksEntity, BinarySensorEntity):
         if self._sensor_type == "presence":
             return self.coordinator.nodes_presence.get(self._node_unit_id)
         return self.coordinator.nodes_data_valid.get(self._node_unit_id)
+
+
+class FourNoksGatewayUnconfiguredPresenceBinarySensor(
+    FourNoksEntity, BinarySensorEntity
+):
+    """Binary sensor on the Gateway indicating presence of unconfigured devices."""
+
+    _attr_device_class = BinarySensorDeviceClass.CONNECTIVITY
+    _attr_translation_key = "unconfigured_device_presence"
+
+    def __init__(self, coordinator: FourNoksCoordinator) -> None:
+        """Initialize the unconfigured presence binary sensor."""
+        super().__init__(coordinator, "unconfigured_device_presence")
+
+    def _get_configured_node_ids(self) -> set[int]:
+        """Get all node IDs configured in Home Assistant for this connection."""
+        conn_id = self.coordinator.config_entry.data.get(CONF_CONNECTION)
+        return {
+            int(entry.data[CONF_UNIT_ID])
+            for entry in self.hass.config_entries.async_entries(DOMAIN)
+            if entry.data.get(CONF_CONNECTION) == conn_id and CONF_UNIT_ID in entry.data
+        }
+
+    def _get_unconfigured_present_nodes(self) -> list[int]:
+        """Return a sorted list of unconfigured node IDs that are currently present."""
+        configured = self._get_configured_node_ids()
+        return sorted(
+            node_id
+            for node_id, is_present in self.coordinator.nodes_presence.items()
+            if is_present and node_id not in configured and node_id > 1
+        )
+
+    @property
+    def is_on(self) -> bool | None:
+        """Return true if any unconfigured device is present."""
+        if not self.coordinator.nodes_presence:
+            return None
+        return len(self._get_unconfigured_present_nodes()) > 0
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return extra state attributes."""
+        nodes = self._get_unconfigured_present_nodes()
+        return {
+            "unconfigured_nodes": nodes,
+            "count": len(nodes),
+        }
+
 

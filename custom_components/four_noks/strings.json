@@ -171,6 +171,9 @@
       },
       "device_node_data_valid": {
         "name": "Device {node_id} data valid"
+      },
+      "unconfigured_device_presence": {
+        "name": "Unconfigured device presence"
       }
     },
     "number": {
