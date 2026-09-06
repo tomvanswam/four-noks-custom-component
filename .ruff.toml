@@ -37,6 +37,9 @@ ignore = [
     "D",
     "PT022",
 ]
+"scripts/*" = [
+    "T201",
+]
 
 
 [lint.isort]

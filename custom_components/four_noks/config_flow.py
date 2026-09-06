@@ -70,9 +70,7 @@ async def _async_discover_active_nodes(
                                 discovered_nodes[node_unit] = (
                                     f"4-noks Smart Plug (Unit {node_unit})"
                                 )
-                            elif (
-                                node_dev.info.device_type_code == DeviceType.GATEWAY
-                            ):
+                            elif node_dev.info.device_type_code == DeviceType.GATEWAY:
                                 discovered_nodes[node_unit] = (
                                     f"4-noks Gateway (Unit {node_unit})"
                                 )

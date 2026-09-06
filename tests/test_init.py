@@ -125,4 +125,3 @@ async def test_legacy_entry_migration(
     assert legacy_entry.data["port"] == 502
     assert legacy_entry.data["unit_id"] == 102
     assert legacy_entry.unique_id == "192.168.2.3:502:102"
-

@@ -233,9 +233,7 @@ async def test_options_flow_gateway_update_connection_and_propagate(
     # Verify child plug's host and port are also updated
     assert mock_plug_config_entry.data[CONF_HOST] == new_host
     assert mock_plug_config_entry.data[CONF_PORT] == new_port
-    assert (
-        mock_plug_config_entry.unique_id == f"{new_host}:{new_port}:{UNIT_ID_PLUG}"
-    )
+    assert mock_plug_config_entry.unique_id == f"{new_host}:{new_port}:{UNIT_ID_PLUG}"
 
 
 async def test_options_flow_gateway_cannot_connect(
@@ -407,4 +405,3 @@ async def test_reconfigure_flow_cannot_connect(
 
     assert result["type"] is FlowResultType.FORM
     assert result["errors"] == {"base": "cannot_connect"}
-
