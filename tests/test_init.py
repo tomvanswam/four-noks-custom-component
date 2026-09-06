@@ -100,3 +100,29 @@ async def test_unload_entry(
     assert await hass.config_entries.async_unload(mock_plug_config_entry.entry_id)
     await hass.async_block_till_done()
     assert mock_plug_config_entry.state is ConfigEntryState.NOT_LOADED
+
+
+async def test_legacy_entry_migration(
+    hass: HomeAssistant,
+) -> None:
+    """Test legacy config entry without host/port auto-migrates."""
+    legacy_conn = MockConfigEntry(
+        domain="modbus_connection",
+        data={"host": "192.168.2.3", "port": 502},
+        entry_id="legacy_conn_123",
+    )
+    legacy_conn.add_to_hass(hass)
+
+    legacy_entry = MockConfigEntry(
+        domain="four_noks",
+        data={"connection": "legacy_conn_123", "unit_id": 102},
+        unique_id="legacy_conn_123_102",
+        title="ZR-PLUG-M (102)",
+    )
+    await _setup(hass, legacy_entry)
+    assert legacy_entry.state is ConfigEntryState.LOADED
+    assert legacy_entry.data["host"] == "192.168.2.3"
+    assert legacy_entry.data["port"] == 502
+    assert legacy_entry.data["unit_id"] == 102
+    assert legacy_entry.unique_id == "192.168.2.3:502:102"
+

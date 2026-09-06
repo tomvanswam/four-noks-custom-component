@@ -48,6 +48,39 @@ async def async_setup_entry(hass: HomeAssistant, entry: FourNoksConfigEntry) -> 
         )
         return False
 
+    if (
+        CONF_HOST not in entry.data
+        or CONF_PORT not in entry.data
+        or CONF_UNIT_ID not in entry.data
+    ):
+        host = entry.data.get(CONF_HOST)
+        port = entry.data.get(CONF_PORT)
+        unit_id = entry.data.get(CONF_UNIT_ID)
+
+        conn_id = entry.data.get("connection")
+        if conn_id:
+            conn_entry = hass.config_entries.async_get_entry(conn_id)
+            if conn_entry:
+                host = host or conn_entry.data.get(CONF_HOST)
+                port = port or conn_entry.data.get(CONF_PORT)
+
+        host = host or "192.168.2.3"
+        port = int(port) if port is not None else 502
+        unit_id = int(unit_id) if unit_id is not None else 1
+
+        new_data = {
+            **entry.data,
+            CONF_HOST: host,
+            CONF_PORT: port,
+            CONF_UNIT_ID: unit_id,
+        }
+        unique_id = f"{host}:{port}:{unit_id}"
+        hass.config_entries.async_update_entry(
+            entry,
+            data=new_data,
+            unique_id=unique_id,
+        )
+
     params = ModbusTcpParams(
         host=entry.data[CONF_HOST],
         port=entry.data[CONF_PORT],

@@ -23,10 +23,25 @@
         "data": {
           "selected_nodes": "Devices to add"
         }
+      },
+      "reconfigure": {
+        "title": "Reconfigure 4-noks Device",
+        "description": "Update connection settings for this 4-noks device.",
+        "data": {
+          "host": "Host / IP address",
+          "port": "Port",
+          "unit_id": "Unit address"
+        },
+        "data_description": {
+          "host": "IP address or hostname of the 4-noks Gateway or modbus-proxy (e.g. 192.168.2.3).",
+          "port": "Modbus TCP port (default 502).",
+          "unit_id": "Station address: 1 for Gateway, 16–126 for Smart Plugs."
+        }
       }
     },
     "error": {
-      "cannot_connect": "Failed to connect. Check that the device is reachable on the host, port, and unit address."
+      "cannot_connect": "Failed to connect. Check that the device is reachable on the host, port, and unit address.",
+      "already_configured": "This 4-noks device is already configured."
     },
     "abort": {
       "already_configured": "This 4-noks device is already configured."
@@ -38,12 +53,31 @@
         "title": "Device Options",
         "description": "Configure settings for this 4-noks device.",
         "data": {
-          "scan_interval": "Polling interval (seconds)"
+          "host": "Host / IP address",
+          "port": "Port",
+          "unit_id": "Unit address",
+          "scan_interval": "Polling interval (seconds)",
+          "auto_discover": "Discover connected devices via Gateway"
         },
         "data_description": {
-          "scan_interval": "How often to poll data from this device via Modbus (in seconds). Default is 30 seconds."
+          "host": "IP address or hostname of the 4-noks Gateway or modbus-proxy (e.g. 192.168.2.3).",
+          "port": "Modbus TCP port (default 502).",
+          "unit_id": "Station address: 1 for Gateway, 16–126 for Smart Plugs.",
+          "scan_interval": "How often to poll data from this device via Modbus (in seconds). Default is 30 seconds.",
+          "auto_discover": "When enabled, detect new active devices in the Zigbee network."
+        }
+      },
+      "discover_nodes": {
+        "title": "Discovered 4-noks Devices",
+        "description": "The 4-noks Gateway reported the following active devices. Select the devices to add to Home Assistant:",
+        "data": {
+          "selected_nodes": "Devices to add"
         }
       }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect. Check that the device is reachable on the host, port, and unit address.",
+      "already_configured": "This 4-noks device is already configured."
     }
   },
   "entity": {
