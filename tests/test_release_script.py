@@ -8,6 +8,7 @@ import pytest
 from scripts.release import (
     CommitInfo,
     calculate_next_version,
+    extract_github_username,
     format_semver,
     generate_changelog,
     get_commits_since,
@@ -246,19 +247,38 @@ def test_update_manifest_version(tmp_path: Path):
     assert updated_data["domain"] == "four_noks"
 
 
+def test_extract_github_username():
+    """Test extracting GitHub username handles."""
+    assert (
+        extract_github_username("Tom van Swam", "tomvanswam@users.noreply.github.com")
+        == "tomvanswam"
+    )
+    assert (
+        extract_github_username(
+            "Tom van Swam", "12345+tomvanswam@users.noreply.github.com"
+        )
+        == "tomvanswam"
+    )
+    assert (
+        extract_github_username("Tom van Swam", "tom.vanswam@example.com")
+        == "tomvanswam"
+    )
+    assert extract_github_username("dev", "dev@example.com") == "dev"
+
+
 def test_get_commits_since_filtering(monkeypatch: pytest.MonkeyPatch):
     """Test commit retrieval skips release and skip-ci commits."""
     delimiter = "---COMMIT_DELIMITER---"
     field_delimiter = "---FIELD_DELIMITER---"
 
     fake_log = (
-        f"hash1{field_delimiter}h1{field_delimiter}Dev1{field_delimiter}"
+        f"hash1{field_delimiter}h1{field_delimiter}Dev1{field_delimiter}dev1@users.noreply.github.com{field_delimiter}"
         f"feat: add feature{field_delimiter}body1{delimiter}\n"
-        f"hash2{field_delimiter}h2{field_delimiter}Dev2{field_delimiter}"
+        f"hash2{field_delimiter}h2{field_delimiter}Dev2{field_delimiter}dev2@users.noreply.github.com{field_delimiter}"
         f"chore(release): v0.2.0 [skip ci]{field_delimiter}release body{delimiter}\n"
-        f"hash3{field_delimiter}h3{field_delimiter}Dev3{field_delimiter}"
+        f"hash3{field_delimiter}h3{field_delimiter}Dev3{field_delimiter}dev3@users.noreply.github.com{field_delimiter}"
         f"fix: fix bug [skip ci]{field_delimiter}body3{delimiter}\n"
-        f"hash4{field_delimiter}h4{field_delimiter}Dev4{field_delimiter}"
+        f"hash4{field_delimiter}h4{field_delimiter}Dev4{field_delimiter}dev4@users.noreply.github.com{field_delimiter}"
         f"fix(ui): correct color{field_delimiter}body4{delimiter}\n"
     )
 
@@ -268,6 +288,8 @@ def test_get_commits_since_filtering(monkeypatch: pytest.MonkeyPatch):
     assert len(commits) == 2
     assert commits[0].subject == "feat: add feature"
     assert commits[0].commit_type == "feat"
+    assert commits[0].author == "dev1"
     assert commits[1].subject == "fix(ui): correct color"
     assert commits[1].scope == "ui"
     assert commits[1].commit_type == "fix"
+    assert commits[1].author == "dev4"

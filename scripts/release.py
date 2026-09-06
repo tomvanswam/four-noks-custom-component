@@ -96,6 +96,25 @@ def get_latest_tag(repo_root: Path) -> str | None:
         return None
 
 
+def extract_github_username(author_name: str, author_email: str) -> str:
+    """Extract a valid GitHub username handle from commit author info."""
+    clean_email = author_email.lower().strip()
+    if "@users.noreply.github.com" in clean_email:
+        local_part = clean_email.split("@")[0]
+        if "+" in local_part:
+            return local_part.split("+", 1)[1]
+        return local_part
+
+    if clean_email and "@" in clean_email:
+        local_part = clean_email.split("@")[0]
+        clean_handle = re.sub(r"[^a-zA-Z0-9-]", "", local_part)
+        if clean_handle:
+            return clean_handle
+
+    clean_name = re.sub(r"[^a-zA-Z0-9-]", "", author_name)
+    return clean_name or "unknown"
+
+
 def get_current_manifest_version(manifest_path: Path) -> str:
     """Read the version string from manifest.json."""
     data = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -111,6 +130,7 @@ def get_commits_since(repo_root: Path, tag: str | None) -> list[CommitInfo]:
         f"%H{field_delimiter}"
         f"%h{field_delimiter}"
         f"%an{field_delimiter}"
+        f"%ae{field_delimiter}"
         f"%s{field_delimiter}"
         f"%b{delimiter}"
     )
@@ -136,16 +156,19 @@ def get_commits_since(repo_root: Path, tag: str | None) -> list[CommitInfo]:
         if not raw:
             continue
         fields = raw.split(field_delimiter)
-        if len(fields) < 5:
+        if len(fields) < 6:
             continue
 
-        full_hash, short_hash, author, subject, body = (
+        full_hash, short_hash, author_name, author_email, subject, body = (
             fields[0].strip(),
             fields[1].strip(),
             fields[2].strip(),
             fields[3].strip(),
             fields[4].strip(),
+            fields[5].strip(),
         )
+
+        author = extract_github_username(author_name, author_email)
 
         # Skip release commits and skip-ci commits
         if "[skip ci]" in subject or subject.startswith("chore(release):"):
