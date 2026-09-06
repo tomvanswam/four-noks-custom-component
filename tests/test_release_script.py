@@ -246,13 +246,28 @@ def test_update_manifest_version(tmp_path: Path):
     assert updated_data["domain"] == "four_noks"
 
 
-def test_get_commits_since_filtering(tmp_path: Path):
+def test_get_commits_since_filtering(monkeypatch: pytest.MonkeyPatch):
     """Test commit retrieval skips release and skip-ci commits."""
-    # We can test against actual repo root
-    repo_root = Path.cwd()
-    commits = get_commits_since(repo_root, None)
-    assert len(commits) > 0
-    # None of the parsed commits should contain [skip ci] or chore(release)
-    for c in commits:
-        assert "[skip ci]" not in c.subject
-        assert not c.subject.startswith("chore(release):")
+    delimiter = "---COMMIT_DELIMITER---"
+    field_delimiter = "---FIELD_DELIMITER---"
+
+    fake_log = (
+        f"hash1{field_delimiter}h1{field_delimiter}Dev1{field_delimiter}"
+        f"feat: add feature{field_delimiter}body1{delimiter}\n"
+        f"hash2{field_delimiter}h2{field_delimiter}Dev2{field_delimiter}"
+        f"chore(release): v0.2.0 [skip ci]{field_delimiter}release body{delimiter}\n"
+        f"hash3{field_delimiter}h3{field_delimiter}Dev3{field_delimiter}"
+        f"fix: fix bug [skip ci]{field_delimiter}body3{delimiter}\n"
+        f"hash4{field_delimiter}h4{field_delimiter}Dev4{field_delimiter}"
+        f"fix(ui): correct color{field_delimiter}body4{delimiter}\n"
+    )
+
+    monkeypatch.setattr("scripts.release.run_cmd", lambda args, cwd=None: fake_log)
+
+    commits = get_commits_since(Path("/fake/repo"), None)
+    assert len(commits) == 2
+    assert commits[0].subject == "feat: add feature"
+    assert commits[0].commit_type == "feat"
+    assert commits[1].subject == "fix(ui): correct color"
+    assert commits[1].scope == "ui"
+    assert commits[1].commit_type == "fix"
