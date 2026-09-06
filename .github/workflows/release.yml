@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     if: "!contains(github.event.head_commit.message, '[skip ci]')"
     container:
-      image: ghcr.io/home-assistant/home-assistant:latest
+      image: ghcr.io/home-assistant/home-assistant:dev
     steps:
       - name: Check out repository
         uses: actions/checkout@v4

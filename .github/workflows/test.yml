@@ -11,7 +11,7 @@ jobs:
     name: Pytest
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/home-assistant/home-assistant:latest
+      image: ghcr.io/home-assistant/home-assistant:dev
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
