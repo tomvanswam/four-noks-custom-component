@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+from tests.common import MockConfigEntry
 
 
 async def _setup(hass: HomeAssistant, entry: MockConfigEntry) -> None:

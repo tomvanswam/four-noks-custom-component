@@ -2,18 +2,21 @@
 
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from unittest.mock import patch
 
+from homeassistant import loader
 from homeassistant.const import CONF_HOST, CONF_PORT
+from homeassistant.core import HomeAssistant
 from modbus_connection.mock import MockModbusConnection
 import pytest
-from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.four_noks.const import (
     CONF_UNIT_ID,
     DOMAIN,
 )
+from tests.common import MockConfigEntry, async_test_home_assistant
 
 UNIT_ID_PLUG = 102
 UNIT_ID_GATEWAY = 1
@@ -117,6 +120,19 @@ GW_DISCRETE_INPUTS: dict[int, bool] = {
 GW_HOLDING_REGISTERS: dict[int, int] = {
     0: 0,
 }
+
+
+@pytest.fixture
+async def hass() -> AsyncGenerator[HomeAssistant, None]:
+    """Return a test Home Assistant instance."""
+    async with async_test_home_assistant() as hass_obj:
+        yield hass_obj
+
+
+@pytest.fixture
+def enable_custom_integrations(hass: HomeAssistant) -> None:
+    """Enable custom integrations defined in the test dir."""
+    hass.data.pop(loader.DATA_CUSTOM_COMPONENTS, None)
 
 
 @pytest.fixture(autouse=True)

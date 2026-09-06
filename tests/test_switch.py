@@ -8,7 +8,8 @@ from homeassistant.components.switch import DOMAIN as SWITCH_DOMAIN
 from homeassistant.const import SERVICE_TURN_OFF, SERVICE_TURN_ON
 from homeassistant.core import HomeAssistant
 from modbus_connection.mock import MockModbusConnection
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+from tests.common import MockConfigEntry
 
 
 async def test_plug_switch_turn_on_off(

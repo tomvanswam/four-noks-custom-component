@@ -36,6 +36,7 @@ ignore = [
 "tests/*" = [
     "D",
     "PT022",
+    "SLF001",
 ]
 "scripts/*" = [
     "T201",

@@ -10,7 +10,6 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from modbus_connection import ModbusError
 from modbus_connection.mock import MockModbusConnection
-from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.four_noks.config_flow import (
     CONF_AUTO_DISCOVER,
@@ -20,6 +19,7 @@ from custom_components.four_noks.const import (
     CONF_UNIT_ID,
     DOMAIN,
 )
+from tests.common import MockConfigEntry
 
 from .conftest import TEST_HOST, TEST_PORT, UNIT_ID_GATEWAY, UNIT_ID_PLUG
 

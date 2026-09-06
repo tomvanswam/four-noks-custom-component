@@ -18,7 +18,7 @@ jobs:
 
       - name: Install test dependencies
         run: |
-          pip install --no-cache-dir pytest-homeassistant-custom-component
+          pip install --no-cache-dir pytest-asyncio
 
       - name: Run tests
         run: |
