@@ -11,7 +11,23 @@ permissions:
 
 jobs:
   validate:
-    name: Validate and Test
+    name: Validate (HACS & Hassfest)
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: HACS Action
+        uses: "hacs/action@main"
+        with:
+          category: "integration"
+
+      - name: Hassfest
+        uses: "home-assistant/actions/hassfest@master"
+
+  lint:
+    name: Lint (Ruff)
     runs-on: ubuntu-latest
     if: "!contains(github.event.head_commit.message, '[skip ci]')"
     steps:
@@ -53,7 +69,7 @@ jobs:
 
   release:
     name: Create Release
-    needs: [validate, test]
+    needs: [validate, lint, test]
     runs-on: ubuntu-latest
     if: "!contains(github.event.head_commit.message, '[skip ci]')"
     steps:
