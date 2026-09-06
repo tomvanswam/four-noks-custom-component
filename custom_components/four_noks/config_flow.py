@@ -378,8 +378,9 @@ class FourNoksOptionsFlow(OptionsFlow):
         unit_id = int(self.config_entry.data.get(CONF_UNIT_ID, 1))
         if unit_id == 1:
             return True
-        if self.config_entry.runtime_data is not None:
-            device = getattr(self.config_entry.runtime_data, "device", None)
+        runtime_data = getattr(self.config_entry, "runtime_data", None)
+        if runtime_data is not None:
+            device = getattr(runtime_data, "device", None)
             if isinstance(device, FourNoksGateway):
                 return True
         return False

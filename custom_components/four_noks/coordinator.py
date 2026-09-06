@@ -53,7 +53,7 @@ class FourNoksCoordinator(DataUpdateCoordinator[FourNoksDevice]):
         """Fetch data from the 4-noks device."""
         try:
             await self.device.async_update()
-        except ModbusError as err:
+        except (ModbusError, OSError) as err:
             raise UpdateFailed(
                 f"Error communicating with 4-noks device: {err}"
             ) from err

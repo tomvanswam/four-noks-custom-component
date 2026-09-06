@@ -15,7 +15,8 @@ from homeassistant.const import (
     __version__ as HA_VERSION,
 )
 from homeassistant.core import HomeAssistant
-from modbus_connection import ModbusTcpParams
+from homeassistant.exceptions import ConfigEntryNotReady
+from modbus_connection import ModbusError, ModbusTcpParams
 
 try:
     from four_noks_modbus import async_probe_device
@@ -86,10 +87,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: FourNoksConfigEntry) -> 
         port=entry.data[CONF_PORT],
     )
     unit = async_get_unit(hass, entry, params, int(entry.data[CONF_UNIT_ID]))
-    device = await async_probe_device(unit)
-    coordinator = FourNoksCoordinator(hass, entry, device)
-
-    await coordinator.async_config_entry_first_refresh()
+    try:
+        device = await async_probe_device(unit)
+        coordinator = FourNoksCoordinator(hass, entry, device)
+        await coordinator.async_config_entry_first_refresh()
+    except (ModbusError, OSError) as err:
+        unit_id = entry.data.get(CONF_UNIT_ID)
+        raise ConfigEntryNotReady(
+            f"Unable to connect to 4-noks device (unit {unit_id}): {err}"
+        ) from err
 
     entry.runtime_data = coordinator
 

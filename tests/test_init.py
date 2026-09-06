@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+from unittest.mock import patch
+
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
+from modbus_connection import ModbusError
 
 from tests.common import MockConfigEntry
 
@@ -126,3 +129,19 @@ async def test_legacy_entry_migration(
     assert legacy_entry.data["port"] == 502
     assert legacy_entry.data["unit_id"] == 102
     assert legacy_entry.unique_id == "192.168.2.3:502:102"
+
+
+async def test_setup_entry_not_ready_on_connection_error(
+    hass: HomeAssistant, mock_plug_config_entry: MockConfigEntry
+) -> None:
+    """Test setup entry sets SETUP_RETRY on connection failure."""
+    with patch(
+        "custom_components.four_noks.async_probe_device",
+        side_effect=ModbusError("Connection lost before response was received."),
+    ):
+        mock_plug_config_entry.add_to_hass(hass)
+        assert not await hass.config_entries.async_setup(
+            mock_plug_config_entry.entry_id
+        )
+        await hass.async_block_till_done()
+        assert mock_plug_config_entry.state is ConfigEntryState.SETUP_RETRY

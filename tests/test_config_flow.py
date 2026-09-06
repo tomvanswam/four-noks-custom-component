@@ -405,3 +405,22 @@ async def test_reconfigure_flow_cannot_connect(
 
     assert result["type"] is FlowResultType.FORM
     assert result["errors"] == {"base": "cannot_connect"}
+
+
+async def test_options_flow_plug_without_runtime_data(
+    hass: HomeAssistant, mock_plug_config_entry: MockConfigEntry
+) -> None:
+    """Test options flow on a plug entry without runtime_data does not crash."""
+    mock_plug_config_entry.add_to_hass(hass)
+    result = await hass.config_entries.options.async_init(
+        mock_plug_config_entry.entry_id
+    )
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "init"
+
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        user_input={CONF_SCAN_INTERVAL: 15},
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert mock_plug_config_entry.options == {CONF_SCAN_INTERVAL: 15}
