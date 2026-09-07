@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from scripts.release import (
+    NON_RELEASABLE_TYPES,
     CommitInfo,
     calculate_next_version,
     extract_github_username,
@@ -14,6 +15,7 @@ from scripts.release import (
     get_commits_since,
     get_current_manifest_version,
     parse_semver,
+    should_create_release,
     update_manifest_version,
 )
 
@@ -293,3 +295,77 @@ def test_get_commits_since_filtering(monkeypatch: pytest.MonkeyPatch):
     assert commits[1].scope == "ui"
     assert commits[1].commit_type == "fix"
     assert commits[1].author == "dev4"
+
+
+def test_should_create_release_empty():
+    """Test should_create_release returns False for empty commit list."""
+    assert should_create_release([]) is False
+
+
+def test_should_create_release_only_non_releasable():
+    """Test should_create_release returns False if all commits are non-releasable."""
+    for c_type in NON_RELEASABLE_TYPES:
+        commit = CommitInfo(
+            hash="123",
+            short_hash="123",
+            author="Dev",
+            subject=f"{c_type}: maintenance change",
+            body="",
+            commit_type=c_type,
+            scope=None,
+            is_breaking=False,
+            description="maintenance change",
+        )
+        assert should_create_release([commit]) is False
+
+    mixed_non_releasable = [
+        CommitInfo(
+            "1", "1", "Dev", "ci: update ci", "", "ci", None, False, "update ci"
+        ),
+        CommitInfo(
+            "2", "2", "Dev", "chore: tidy up", "", "chore", None, False, "tidy up"
+        ),
+        CommitInfo(
+            "3", "3", "Dev", "docs: fix typo", "", "docs", None, False, "fix typo"
+        ),
+    ]
+    assert should_create_release(mixed_non_releasable) is False
+
+
+def test_should_create_release_breaking_in_non_releasable():
+    """Test breaking change even in chore/ci/docs still triggers release."""
+    commit = CommitInfo(
+        hash="123",
+        short_hash="123",
+        author="Dev",
+        subject="chore!: major dependency upgrade",
+        body="",
+        commit_type="chore",
+        scope=None,
+        is_breaking=True,
+        description="major dependency upgrade",
+    )
+    assert should_create_release([commit]) is True
+
+
+def test_should_create_release_mixed_with_fix_or_feat():
+    """Test non-releasable mixed with fix or feat triggers release."""
+    commits = [
+        CommitInfo(
+            "1", "1", "Dev", "ci: update ci", "", "ci", None, False, "update ci"
+        ),
+        CommitInfo(
+            "2", "2", "Dev", "fix: resolve bug", "", "fix", None, False, "resolve bug"
+        ),
+    ]
+    assert should_create_release(commits) is True
+
+    commits_feat = [
+        CommitInfo(
+            "1", "1", "Dev", "docs: update docs", "", "docs", None, False, "update docs"
+        ),
+        CommitInfo(
+            "2", "2", "Dev", "feat: new sensor", "", "feat", None, False, "new sensor"
+        ),
+    ]
+    assert should_create_release(commits_feat) is True

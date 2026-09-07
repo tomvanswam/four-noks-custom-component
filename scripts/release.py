@@ -27,6 +27,7 @@ COMMIT_PATTERN = re.compile(
     r"^(?P<type>[a-zA-Z]+)(?:\((?P<scope>[^)]+)\))?(?P<breaking>!)?:\s*(?P<subject>.+)$"
 )
 BREAKING_PATTERN = re.compile(r"BREAKING[ -]CHANGE:\s*(.+)", re.IGNORECASE)
+NON_RELEASABLE_TYPES = {"ci", "chore", "docs"}
 
 
 class CommitInfo(NamedTuple):
@@ -207,6 +208,19 @@ def get_commits_since(repo_root: Path, tag: str | None) -> list[CommitInfo]:
     return commits
 
 
+def should_create_release(commits: list[CommitInfo]) -> bool:
+    """Determine whether the retrieved commits warrant a new release.
+
+    Returns False if there are no commits or if all commits are non-breaking
+    maintenance types (ci, chore, docs).
+    """
+    if not commits:
+        return False
+    return any(
+        c.commit_type not in NON_RELEASABLE_TYPES or c.is_breaking for c in commits
+    )
+
+
 def calculate_next_version(
     current_version: str, commits: list[CommitInfo]
 ) -> tuple[str, str]:
@@ -356,8 +370,15 @@ def main() -> int:
     print(f"Latest git tag: {latest_tag or 'None (initial release)'}")
 
     commits = get_commits_since(repo_root, latest_tag)
-    if not commits:
-        print("No new commits to release.")
+    if not should_create_release(commits):
+        if not commits:
+            print("No new commits to release.")
+        else:
+            types_found = {c.commit_type for c in commits}
+            print(
+                f"Only non-releasable commit(s) ({', '.join(sorted(types_found))}) "
+                f"found since {latest_tag or 'beginning'}. Skipping release."
+            )
         github_output = os.getenv("GITHUB_OUTPUT")
         if github_output:
             with open(github_output, "a", encoding="utf-8") as f:
