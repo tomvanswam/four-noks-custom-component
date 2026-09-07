@@ -10,8 +10,8 @@ permissions:
   contents: write
 
 jobs:
-  validate:
-    name: Validate (HACS & Hassfest)
+  hacs:
+    name: HACS Action
     runs-on: ubuntu-latest
     if: "!contains(github.event.head_commit.message, '[skip ci]')"
     steps:
@@ -22,6 +22,14 @@ jobs:
         uses: "hacs/action@main"
         with:
           category: "integration"
+
+  hassfest:
+    name: Hassfest
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
 
       - name: Hassfest
         uses: "home-assistant/actions/hassfest@master"
@@ -69,7 +77,7 @@ jobs:
 
   release:
     name: Create Release
-    needs: [validate, lint, test]
+    needs: [hacs, hassfest, lint, test]
     runs-on: ubuntu-latest
     if: "!contains(github.event.head_commit.message, '[skip ci]')"
     steps:
