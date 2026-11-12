@@ -11,6 +11,10 @@ Custom integration for Home Assistant to control and monitor **4-noks ZB-Connect
 - **ZR-PLUG-EU-M / ZR-PLUG-M**: Smart Plug socket relay switch, real-time power (W), cumulative energy (kWh), duration of operation, and wireless signal strength (dB).
 - **ZC-GW-ETH-EM**: Ethernet / Zigbee Gateway RF diagnostics, network channel, PAN ID, connected node count, and mesh status.
 
+## Requirements
+
+- Home Assistant **2026.9.0** or newer. Older versions are refused at setup (and by HACS).
+
 ## Installation via HACS
 
 1. Make sure you have [HACS](https://hacs.xyz/) installed.
@@ -40,3 +44,7 @@ The integration connects directly over **Modbus TCP**; no separate Modbus integr
 
 - **Reconfigure** (entry menu -> *Reconfigure*): change host, port or unit ID. When the host/port of a gateway changes, the plugs behind it are updated automatically.
 - **Configure** (options): change the polling interval (seconds). On a gateway you can also adjust host, port and unit ID and run auto discover again to add newly paired plugs.
+
+### Upgrading from an earlier version
+
+Earlier versions required a separate **Modbus Connection** entry that the 4-noks entries referred to. Existing 4-noks entries are migrated automatically on first start: host and port are copied from the referenced Modbus Connection entry into the 4-noks entry. After the 4-noks devices are loaded again, the old Modbus Connection entry is no longer used and can be removed.
