@@ -9,7 +9,8 @@
   ],
   "config_flow": true,
   "connectivity": [
-    "modbus"
+    "modbus",
+    "zigbee"
   ],
   "dependencies": [
     "modbus"
