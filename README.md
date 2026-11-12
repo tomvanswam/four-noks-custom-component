@@ -6,10 +6,6 @@
 
 Custom integration for Home Assistant to control and monitor **4-noks ZB-Connection** Modbus devices (**ZC-GW-ETH-EM** Gateway and **ZR-PLUG-EU-M** / **ZR-PLUG-M** Smart Plugs).
 
-> [!NOTE]
-> This custom component contains a vendorized copy of the `four_noks_modbus` device library, allowing it to be tested immediately via HACS without waiting for upstream package releases.
-> It uses Home Assistant's new `modbus_connection` hub architecture.
-
 ## Supported Devices
 
 - **ZR-PLUG-EU-M / ZR-PLUG-M**: Smart Plug socket relay switch, real-time power (W), cumulative energy (kWh), duration of operation, and wireless signal strength (dB).
