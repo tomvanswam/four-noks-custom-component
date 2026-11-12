@@ -256,7 +256,10 @@ class FourNoksConfigFlow(ConfigFlow, domain=DOMAIN):
 
             new_unique_id = f"{host}:{port}:{unit_id}"
             await self.async_set_unique_id(new_unique_id)
-            self._abort_if_unique_id_configured()
+            if new_unique_id != entry.unique_id:
+                # Only abort when another entry already owns this unit;
+                # the entry being reconfigured always matches itself.
+                self._abort_if_unique_id_configured()
 
             params = ModbusTcpParams(host=host, port=port)
             try:

@@ -407,6 +407,60 @@ async def test_reconfigure_flow_cannot_connect(
     assert result["errors"] == {"base": "cannot_connect"}
 
 
+async def test_reconfigure_flow_unchanged(
+    hass: HomeAssistant,
+    mock_gateway_config_entry: MockConfigEntry,
+) -> None:
+    """Test reconfigure with unchanged connection settings succeeds."""
+    mock_gateway_config_entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(mock_gateway_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    result = await mock_gateway_config_entry.start_reconfigure_flow(hass)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        user_input={
+            CONF_HOST: TEST_HOST,
+            CONF_PORT: TEST_PORT,
+            CONF_UNIT_ID: UNIT_ID_GATEWAY,
+        },
+    )
+    await hass.async_block_till_done()
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "reconfigure_successful"
+    assert (
+        mock_gateway_config_entry.unique_id
+        == f"{TEST_HOST}:{TEST_PORT}:{UNIT_ID_GATEWAY}"
+    )
+
+
+async def test_reconfigure_flow_already_configured(
+    hass: HomeAssistant,
+    mock_gateway_config_entry: MockConfigEntry,
+    mock_plug_config_entry: MockConfigEntry,
+) -> None:
+    """Test reconfigure aborts when the target unit belongs to another entry."""
+    mock_gateway_config_entry.add_to_hass(hass)
+    mock_plug_config_entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(mock_gateway_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    result = await mock_gateway_config_entry.start_reconfigure_flow(hass)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        user_input={
+            CONF_HOST: TEST_HOST,
+            CONF_PORT: TEST_PORT,
+            CONF_UNIT_ID: UNIT_ID_PLUG,
+        },
+    )
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "already_configured"
+    assert mock_gateway_config_entry.data[CONF_UNIT_ID] == UNIT_ID_GATEWAY
+
+
 async def test_options_flow_plug_without_runtime_data(
     hass: HomeAssistant, mock_plug_config_entry: MockConfigEntry
 ) -> None:
