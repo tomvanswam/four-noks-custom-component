@@ -8,6 +8,9 @@
     "@tomvanswam"
   ],
   "config_flow": true,
+  "connectivity": [
+    "modbus"
+  ],
   "dependencies": [
     "modbus"
   ],
