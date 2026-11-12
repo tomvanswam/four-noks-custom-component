@@ -1,6 +1,9 @@
 {
   "domain": "four_noks",
   "name": "4-noks",
+  "categories": [
+    "hubs_protocols"
+  ],
   "codeowners": [
     "@tomvanswam"
   ],
