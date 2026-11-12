@@ -29,6 +29,7 @@ from homeassistant.helpers import (
     entity,
     entity_registry as er,
     floor_registry as fr,
+    frame,
     issue_registry as ir,
     label_registry as lr,
     restore_state as rs,
@@ -182,6 +183,7 @@ async def async_test_home_assistant(
         hass.config_entries._async_shutdown,
     )
 
+    frame.async_setup(hass)
     entity.async_setup(hass)
     loader.async_setup(hass)
     await condition.async_setup(hass)
