@@ -1,10 +1,17 @@
 {
   "domain": "four_noks",
   "name": "4-noks",
+  "categories": [
+    "hubs_protocols"
+  ],
   "codeowners": [
     "@tomvanswam"
   ],
   "config_flow": true,
+  "connectivity": [
+    "modbus",
+    "zigbee"
+  ],
   "dependencies": [
     "modbus"
   ],
