@@ -16,11 +16,11 @@ jobs:
       image: ghcr.io/home-assistant/home-assistant:dev
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install test dependencies
         run: |
-          pip install --no-cache-dir pytest-asyncio
+          pip install --no-cache-dir --root-user-action=ignore pytest-asyncio
 
       - name: Run tests
         run: |
